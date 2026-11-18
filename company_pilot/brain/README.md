@@ -1,0 +1,51 @@
+# Integração do cérebro da empresa
+
+Biblioteca sem servidor web e sem execução na importação. O GitHub mantém os dados online; o operador interpreta a fila no computador dele, quando estiver disponível. Fundador/equipe enviam respostas e capturas sem plano individual de LLM. As escolhas de modelo/conta pertencem ao operador; `SemanticWorker` recebe um interpretador por injeção. `ClaudeInterpreter` não é acionado na importação ou nos testes comuns e não tem fallback de API.
+
+```python
+from company_pilot.brain import Brain, GitHubStore
+from company_pilot.inference import SemanticWorker, ClaudeInterpreter
+
+store = GitHubStore("lucaslgaio/company-work-map",
+                    branch="company-state", mirror_dir="CAMINHO-LOCAL-DO-OPERADOR")
+brain = Brain(store)
+# Uma vez, com o ator proprietário autenticado:
+# brain.initialize("Nome da empresa", synthetic=False,
+#                  screenshots={"founder": False, "team": False})
+# Sob comando explícito do operador, nunca na importação:
+# SemanticWorker(brain, ClaudeInterpreter()).run_once()
+```
+
+`LocalStore(root, actor=...)` fornece identidade de fixture somente em E1. `GitHubStore` não aceita ator por argumento: usa `/user` e a permissão nativa do repositório privado. `development=True` restringe a inicialização a exemplos sintéticos. O mesmo repositório pode ser a casa completa da empresa conforme autorização do operador; a branch de dados não cria uma fronteira de permissão.
+
+Chamadas públicas e envelopes estão em `contracts/v1/README.md`. Pontos de integração:
+
+- Coletor: `device_policy`, `upload_attachment`, `send_observation`, `send_observations`/`ingest_batch`. O lote aceita até 50 eventos e gera uma transação, em vez de um commit por amostra. Retentativa preserva IDs e falha sem gravar parcialmente.
+- Contexto desconhecido: `ingest_context_gap`/`record_coverage_gap`, com `schema_version`, UUIDs `event_id`/`device_id`, `occurred_at`, `app`, `surface_kind="desktop_window"`, `synthetic`. Nenhum título, corpo ou imagem é aceito. A pergunta é de contexto, sem inventar tarefa da empresa. Respostas apoiadas geram sinais de contexto; promoção real da quarentena depende da integração com o coletor.
+- Fundador: `interview_next`, `interview_answer`, `interview_correct(topic,text,event_id)`, `interview_defer(topic,text,event_id)`, `record_answer`, `update_policy`, `change_map`. Respostas são preservadas antes da interpretação. A conversa tem uma pergunta por vez e usa o próximo tópico/pergunta produzido a partir das fontes. Mudanças de mapa têm operações tipadas e preservam evidência.
+- Nora: `transact_nora(callback, event_id=None)` recebe dict JSON mutável, retorna o resultado JSON após CAS e ignora gravações sem alteração. Callback não pode enviar mensagens: pode ser reexecutado em conflito. `record_answer(..., source={kind:"nora",route_id,message_id,account,conversation,sender}, candidate_question_ids=None)` confere a rota habilitada, deriva o fundador configurado e guarda o ator GitHub como atestador. Resposta ambígua preserva candidatos e cria uma pergunta de esclarecimento, sem escolher a mais recente ou todas. Com candidatos explícitos, a interpretação é limitada a eles; sem vínculo suficiente, o estado é `awaiting_disambiguation` e o worker informa `awaiting_clarification`. A resposta à pergunta agenda interpretação do vínculo e retoma automaticamente a resposta original, mantendo ambas as fontes.
+- Operador: `pending_jobs`, `snapshot`, `apply_analysis`, `mark_job_error`. A fila mostra idade, tentativas e próxima tentativa. Falha de modelo mantém a fonte e usa recuo; nenhum resumo manual é exigido. O resultado aplicado grava metadados de modelo/prompt/schema e SHA-256 da entrada quando fornecidos pelo interpretador.
+
+Respostas comuns do fundador também podem acrescentar, renomear, separar, unir, reatribuir tarefas e corrigir conexões. O `SemanticWorker` interpreta a intenção explícita em `map_changes` tipado e aplica na mesma transação da resposta, usando o applier existente. O fundador não produz JSON nem chama a API de manutenção. Cada operação cita a resposta original; versões e escopo vêm do snapshot entregue pelo worker, e a autoridade vem da identidade do fundador já verificada no recebimento. Separações/uniões conservam todas as fontes, com histórico dos predecessores. Uma proposta inválida ou obsoleta fica pendente sem alterar o mapa. O contrato completo está em `contracts/v1/README.md`; a prova sintética de Nora→resposta→split→resposta posterior→merge está em `tests/brain/test_structural_answers.py`, sem modelo ou envio real.
+
+O adaptador usa Git tree → commit → ref com `force:false`, e reabre o estado em corrida. Fontes, versões e cadeia de eventos são anexadas; Markdown em português é derivado dos mesmos registros. Os campos obrigatórios e as chaves de incerteza são enumerações fixas. Um campo sem evidência não se torna estabelecido por pedido do modelo. Citações devem existir literalmente em fontes autorizadas. Isso valida referências; a correção semântica das descrições continua sujeita à revisão e à observação.
+
+Revisões de perguntas avançam quando evidência, versão-base, texto ou situação projetada mudam; uma atualização idêntica não avança. Correção para “não se aplica” desativa conexões derivadas anteriores, preservando suas versões. Relatos conflitantes de contexto abrem uma pergunta estável; uma resposta vinculada do fundador resolve o relato atual e conserva os anteriores. Observações podem refinar somente IDs candidatos fornecidos ao interpretador; um ID desconhecido é recusado.
+
+Depois de mostrar o entendimento ao fundador, `interview_correct` aceita uma correção literal de um dos cinco tópicos mesmo com a entrevista concluída. Guarda a fonte, a descrição anterior e um job de interpretação limitado ao tópico. Uma correção apoiada e única atualiza esse tópico e preserva os demais; mudanças concorrentes, alternativas ou falta de apoio continuam em uma pergunta rastreada. O comando não reescreve tarefas/nós históricos como efeito colateral. `interview_defer` registra uma declaração explicitamente desconhecida, preserva qualquer descrição anterior e cria uma pergunta estável para Nora, sem depender de modelo para avançar a conversa. Fontes antigas ainda podem informar outros tópicos, mas não preenchem o que foi adiado. “Não se aplica” declarado é um relato conhecido: use resposta/correção normal, não adiamento.
+
+`interview_next` pode retornar `complete` com `deferred_topics` e `pending_context_question_ids`: a coleta inicial terminou, mas o contexto continua parcial. `business_context_status` distingue `collecting`, `pending_analysis`, `pending_clarification` e `known_topics_recorded`. Nunca apresentar `complete` como prova de que toda a empresa já foi compreendida. Uma resposta posterior do fundador/Nora resolve o tópico adiado e preserva o texto original e o histórico. Replays idênticos não reabrem a dúvida; mudança de operação/tópico/texto exige outro event-id. A raiz integra esses métodos à CLI e ao material do fundador.
+
+O mirror retém o último snapshot validado. Reescrita, retirada de evidência ou quebra da cadeia interrompem operações e gravam `integrity-alert.json`. Depois de o proprietário reconciliar a história, `store.reconcile_mirror()` verifica novamente antes de resolver o alerta. Não força histórico nem apaga dados. Uma falha transitória de rede continua sendo erro de transporte. Não há promessa de armazenamento inviolável ou proteção nativa de branch no plano gratuito.
+
+Permissões desejadas e reais são distintas. `access_plan` apenas inspeciona/propõe; não convida ninguém. Em repositório pessoal, colaborador recebe leitura/escrita; somente o proprietário é admin. O helper de aplicação de acesso do operador é responsabilidade da integração raiz, com plano e identidades verificados. Nenhum segredo do operador vai aos arquivos de equipe.
+
+Verificação: `python3 -m unittest discover -s tests/brain -q` e `python3 -m unittest discover -s tests/inference -q`. Os testes são E1: fixtures, API GitHub simulada e subprocessos simulados. `tests/brain/live-cycle-receipt.json` registra uma interpretação real de exemplo sintético, com tarefa provisória → resposta → estabelecida e versões preservadas; não prova captura nativa, acesso remoto ou envio Nora. O comando de repetição ao vivo é opt-in em `company_pilot.brain.demo`; não foi repetido após o pedido de conservar uso do Claude.
+
+Restam provas de integração: replay remoto por `gh` no repositório autorizado; recusa de acesso com identidades reais adequadas; transporte/quarentena/coalescência do coletor; perguntas/respostas pelo adaptador Nora; leitura do resultado em português sem Git; plataformas e sessão em segundo plano. As contas, pessoas e fatos reais da empresa continuam desconhecidos.
+
+Ao atualizar uma tarefa, relações derivadas só mudam quando o campo ou seu suporte muda. Nomes já corrigidos de pessoas/processos permanecem no nó compartilhado. A remoção explícita de uma relação persiste em respostas sobre outros campos; só evidência posterior dessa relação ou reconexão explícita pode restabelecê-la. Operações tipadas validam também versões dos objetos derivados existentes afetados.
+
+O reparo a31 acrescenta mensagens comuns (`message_targets` / `record_message`) com tarefas estabelecidas separadas das perguntas abertas; afirmações atuais com IDs e adição/substituição explícita; nomes de reconhecimento com fonte; política pedida/efetiva e participação individual; e pagamento com objeto/registro sustentados ou lacuna específica. O contrato exato está em `contracts/v1/outcome-repair-contract.md`. As opções que o repositório não consegue aplicar mantêm a coleta pendente, sem ampliar acesso.
+
+`ingest_company_record` recebe revisões/remoções tipadas de arquivos/registros, com URL e identidade original, extrato limitado e referência ao arquivo completo arquivado pelo watchdog. Não é uma observação de janela ou prova de execução humana. Somente atores configurados em `watchdog_actors` podem enviar; o acesso humano efetivo é verificado independentemente de consentimento de dispositivo. Extração parcial permanece explícita, replays não duplicam a fonte e remoções preservam tarefas/histórico. Arquivos completos, catálogo/discovery e conectores pertencem ao watchdog; o limite finito do snapshot Git continua relevante.

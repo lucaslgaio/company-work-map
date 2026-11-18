@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "repository": "lucaslgaio/company-work-map",
+  "code_commit": "HEAD",
+  "code_commit_resolution": "A versão instalada é o commit desta pasta: git rev-parse HEAD. Não use um pin antigo.",
+  "release_status": "review_candidate",
+  "founder_setup": "configuracao-fundador.md",
+  "team_setup": "configuracao-equipe.md",
+  "start_here": "../START-HERE.md"
+}

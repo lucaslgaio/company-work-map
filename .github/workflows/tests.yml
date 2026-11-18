@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python suites
+        run: |
+          python -m unittest discover -s tests/brain -q
+          python -m unittest discover -s tests/inference -q
+          python -m unittest discover -s tests/nora -q
+          python -m unittest discover -s tests/cli -q
+          python -m unittest discover -s tests/desktop -q
+          python -m unittest discover -s tests/watchdog -q
+          python -m unittest discover -s tests/setup -q
+          python -m unittest discover -s tests/access -q
+          python -m unittest discover -s tests -p test_access.py -q
+
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Nora bridge
+        run: node --test tests/nora/bridge.test.mjs

@@ -1,0 +1,10 @@
+{
+  "version": "2026.7.1-2",
+  "files": {
+    "dist/dispatch-DnzGTpPs.js": "6b62dc3b875af0a8b72509c69dea53808683eeef658fbb94d25f6875a4d53316",
+    "dist/hook-runner-global-BmIrGlLG.js": "c066170e97a2355603f0bdd3079a687bf835632856a741fa9a92683d7d4b2750",
+    "dist/message-hook-mappers-CLWKm8aG.js": "12423ebb47bbf276990d05adc95bfca56a789f380c5b5160bfd29da62f715ff4",
+    "dist/hook-types-DQ9eTy2x.d.ts": "fbb4cd0a6254050fa377d4aa97b2d8176caeddea7fead3dbcfba35a987aa10c0",
+    "dist/register.message-TVdqEQ0c.js": "32d770407648d449caf2f12db77d1e0ff9702fd629caa9cce976a5424977fb27"
+  }
+}

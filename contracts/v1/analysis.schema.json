@@ -1,0 +1,3986 @@
+{
+  "type": "object",
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object",
+            "properties": {
+              "trigger": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "performer": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "input": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "action": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "result": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "purpose": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "placement": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "handoff": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "tracking_record": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "trigger",
+              "performer",
+              "input",
+              "action",
+              "result",
+              "purpose",
+              "placement",
+              "handoff",
+              "tracking_record"
+            ],
+            "additionalProperties": false
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "contains",
+                    "performed_by",
+                    "handoff",
+                    "depends_on",
+                    "tracks",
+                    "pays_for"
+                  ]
+                },
+                "target_id": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "source_id": {
+                        "type": "string"
+                      },
+                      "quote": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "source_id",
+                      "quote"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "basis": {
+                  "type": "string",
+                  "enum": [
+                    "observed",
+                    "reported",
+                    "inferred"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "target_id",
+                "evidence"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "payment": {
+            "type": "object",
+            "properties": {
+              "object": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "tracking_record": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "object",
+              "tracking_record"
+            ],
+            "additionalProperties": false
+          },
+          "consistency_issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "source_id": {
+                        "type": "string"
+                      },
+                      "quote": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "source_id",
+                      "quote"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "description",
+                "evidence"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "field_updates": {
+            "type": "object",
+            "properties": {
+              "trigger": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "performer": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "input": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "action": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "result": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "purpose": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "placement": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "handoff": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "tracking_record": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "progress",
+                      "conflict",
+                      "equivalent"
+                    ]
+                  },
+                  "effective_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prior_evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "mode",
+                  "effective_at",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "issue_resolutions": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "issue_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "resolution": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "basis": {
+                      "type": "string",
+                      "enum": [
+                        "observed",
+                        "reported",
+                        "inferred"
+                      ]
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source_id": {
+                            "type": "string"
+                          },
+                          "quote": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "source_id",
+                          "quote"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "basis",
+                    "evidence"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "issue_ids",
+                "resolution"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "task_id",
+          "name",
+          "fields",
+          "links"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "context_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "activities",
+              "people",
+              "stages",
+              "tracking",
+              "documents"
+            ]
+          },
+          "value": {
+            "type": "string"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "reported",
+              "inferred"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_id": {
+                  "type": "string"
+                },
+                "quote": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_id",
+                "quote"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "add",
+              "replace",
+              "conflict"
+            ]
+          },
+          "replaces": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "topic",
+          "value",
+          "basis",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "responsibility",
+              "job",
+              "process",
+              "person",
+              "tracking_record",
+              "project"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_id": {
+                  "type": "string"
+                },
+                "quote": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_id",
+                "quote"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "next_question": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "topic": {
+              "type": "string",
+              "enum": [
+                "activities",
+                "people",
+                "stages",
+                "tracking",
+                "documents"
+              ]
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "topic",
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "answer_assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "answer_id": {
+            "type": "string"
+          },
+          "question_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_id": {
+                  "type": "string"
+                },
+                "quote": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_id",
+                "quote"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "answer_id",
+          "question_ids",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "map_changes": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "add"
+                ]
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "task",
+                  "organization",
+                  "responsibility",
+                  "job",
+                  "process",
+                  "person",
+                  "tracking_record",
+                  "project"
+                ]
+              },
+              "id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "object",
+                "properties": {
+                  "trigger": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "performer": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "input": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "action": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "purpose": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "placement": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "handoff": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "tracking_record": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "kind",
+              "id",
+              "name",
+              "fields",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "rename"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "id",
+              "name",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "reassign"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "performer": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "observed",
+                      "reported",
+                      "inferred"
+                    ]
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source_id": {
+                          "type": "string"
+                        },
+                        "quote": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "quote"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "value",
+                  "basis",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "id",
+              "performer",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "correct"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "object",
+                "properties": {
+                  "trigger": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "performer": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "input": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "action": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "result": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "purpose": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "placement": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "handoff": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "tracking_record": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "enum": [
+                          "observed",
+                          "reported",
+                          "inferred"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "source_id": {
+                              "type": "string"
+                            },
+                            "quote": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "source_id",
+                            "quote"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "basis",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "id",
+              "fields",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "split"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "successors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "trigger": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "performer": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "input": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "action": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "result": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "purpose": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "placement": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "handoff": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "tracking_record": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false
+                    },
+                    "evidence_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "fields",
+                    "evidence_ids"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "id",
+              "successors",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "merge"
+                ]
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "successors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "fields": {
+                      "type": "object",
+                      "properties": {
+                        "trigger": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "performer": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "input": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "action": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "result": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "purpose": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "placement": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "handoff": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "tracking_record": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "observed",
+                                "reported",
+                                "inferred"
+                              ]
+                            },
+                            "evidence": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "source_id": {
+                                    "type": "string"
+                                  },
+                                  "quote": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "source_id",
+                                  "quote"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "basis",
+                            "evidence"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false
+                    },
+                    "evidence_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "fields",
+                    "evidence_ids"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "ids",
+              "successors",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "connect"
+                ]
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "contains",
+                  "performed_by",
+                  "handoff",
+                  "depends_on",
+                  "tracks",
+                  "pays_for"
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "from",
+              "to",
+              "kind",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "disconnect"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected_versions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "op",
+              "id",
+              "evidence",
+              "expected_versions"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "recognition_markers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "record_name",
+              "record_ref",
+              "company_alias",
+              "business_account"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_id": {
+                  "type": "string"
+                },
+                "quote": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_id",
+                "quote"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "add",
+              "retire"
+            ]
+          }
+        },
+        "required": [
+          "value",
+          "kind",
+          "evidence",
+          "operation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "question_answers": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_id": {
+            "type": "string"
+          },
+          "claim": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "observed",
+                  "reported",
+                  "inferred"
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "value",
+              "basis",
+              "evidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "question_id",
+          "claim"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "attention_requests": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "observed",
+                  "reported",
+                  "inferred"
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source_id": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source_id",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "value",
+              "basis",
+              "evidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "question_id",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "message_intent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "answer",
+            "correction",
+            "context",
+            "dismiss",
+            "delegate",
+            "chatter",
+            "unclear"
+          ]
+        },
+        "task_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "delegate_to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "disposition": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "not_company",
+            "not_useful",
+            "not_now",
+            "already_answered"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source_id": {
+                "type": "string"
+              },
+              "quote": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source_id",
+              "quote"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "task_ids",
+        "question_ids",
+        "delegate_to",
+        "disposition",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "record_extraction": {
+      "type": "object",
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "complete",
+        "limitations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "tasks",
+    "context_updates",
+    "nodes",
+    "next_question"
+  ],
+  "additionalProperties": false
+}

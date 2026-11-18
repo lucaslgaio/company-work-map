@@ -1,0 +1,32 @@
+# INACTIVE TEMPLATE. Rendering does not install, enable, pair or start this service.
+[Unit]
+Description=Company pilot isolated WhatsApp transport
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/company-pilot/openclaw.json
+ConditionPathExists=/etc/company-pilot/gateway-approved.json
+
+[Service]
+Type=simple
+User=company-pilot
+Group=company-pilot
+WorkingDirectory=/var/lib/company-pilot
+StateDirectory=company-pilot
+StateDirectoryMode=0700
+UMask=0077
+Environment=OPENCLAW_STATE_DIR=/var/lib/company-pilot/openclaw
+Environment=OPENCLAW_CONFIG_PATH=/etc/company-pilot/openclaw.json
+EnvironmentFile=/etc/company-pilot/gateway.env
+ExecStart=@OPENCLAW_EXECUTABLE@ --profile company-pilot gateway --port @GATEWAY_PORT@ --bind loopback
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=45
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/company-pilot
+
+[Install]
+WantedBy=multi-user.target

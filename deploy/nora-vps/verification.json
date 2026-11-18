@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "executed_by": "codex-nora",
+  "assignment": "a21",
+  "evidence_level": "E1_only",
+  "recorded_at": "2026-11-17T15:46:36.919126+00:00",
+  "p18_core_baseline": "0866e806c69dc078fd2d10fb02b83cc139e5bc82",
+  "source_sha256": {
+    "company_pilot/nora/bridge/index.js": "951b488b7a37733c7179a0d343d324a9278c47defbc66c8966d7243b938f682b",
+    "company_pilot/nora/bridge/openclaw.plugin.json": "10512e83941c31274a24d8ea2b155eccf921eb484375887b27f0541575e8dc31",
+    "company_pilot/nora/setup.py": "d80739ac7cab2d76bb096fc3f611a142f5400b07261af054b172c16c1154874d",
+    "deploy/nora-vps/render_bundle.py": "d606075a0934a73b2149295d0d60b07428bf545dfff616e7d980c79e859194a1",
+    "deploy/nora-vps/templates/company-pilot-gateway.service.in": "b81aec46effda66ef5adc7e7d648a26e22bfe33cef5ddf317d64a5c16ba8d643",
+    "deploy/nora-vps/templates/company-pilot-nora.service.in": "9e9b48a4a2cb9c598497443b3a90d4dc9b6516f354b17b9e118140aba3c71f06",
+    "tests/nora/pinned_bridge_probe.mjs": "f2d48f9f80549f8bafde67062bd62af7f607b916934b05452a010a4071962ae7",
+    "tests/nora/openclaw-source-pin.json": "5fded71ca6c0f9ded69c1ef86a6b2e0467e582273b202a463d453b075cc2335f",
+    "tests/nora/test_setup.py": "6ddb0133ebe33f650611cef6cd9a8bf8e474198e80fc80f431ff46f6d5f8b75e",
+    "tests/nora/test_deployment.py": "380951fca0092541e81d11092a631d195f7adbac2096f944f8cd3cb7ef5f72f6"
+  },
+  "openclaw_pin": {
+    "version": "2026.7.1-2",
+    "files": {
+      "dist/dispatch-DnzGTpPs.js": "6b62dc3b875af0a8b72509c69dea53808683eeef658fbb94d25f6875a4d53316",
+      "dist/hook-runner-global-BmIrGlLG.js": "c066170e97a2355603f0bdd3079a687bf835632856a741fa9a92683d7d4b2750",
+      "dist/message-hook-mappers-CLWKm8aG.js": "12423ebb47bbf276990d05adc95bfca56a789f380c5b5160bfd29da62f715ff4",
+      "dist/hook-types-DQ9eTy2x.d.ts": "fbb4cd0a6254050fa377d4aa97b2d8176caeddea7fead3dbcfba35a987aa10c0",
+      "dist/register.message-TVdqEQ0c.js": "32d770407648d449caf2f12db77d1e0ff9702fd629caa9cce976a5424977fb27"
+    }
+  },
+  "node_version": "22.23.2",
+  "before_fix": {
+    "pinned_reply_dispatch_probe": "FAIL",
+    "actual_result": "undefined",
+    "expected": "handled with lifecycle and complete zero counts"
+  },
+  "effects": {
+    "real_binding": false,
+    "deployment": false,
+    "service_start": false,
+    "real_send_or_dryrun_send": false,
+    "model_call": false,
+    "remote_login": false
+  },
+  "blocked_checks_and_corrections": [
+    {
+      "check": "initial general OpenClaw help",
+      "attempt": "personal-state permission hardening",
+      "outcome": "EPERM sandbox denial",
+      "correction": "all later CLI/module probes use temporary isolated config/state"
+    },
+    {
+      "check": "renderer negative path cases",
+      "attempt": "macOS alias paths reached mkdir",
+      "outcome": "EPERM sandbox denial",
+      "correction": "guard both lexical and resolved protected paths before writing"
+    }
+  ],
+  "not_established": [
+    "target Ubuntu/systemd installation",
+    "fresh VPS health/capacity/port availability",
+    "complete dedicated gateway/account configuration",
+    "real company route/actor binding",
+    "real WhatsApp ingress/delivery/read status"
+  ],
+  "results": [
+    {
+      "name": "nora_python",
+      "argv": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/nora",
+        "-p",
+        "test_*.py"
+      ],
+      "cwd_role": "nora_worktree",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "...............................................\n----------------------------------------------------------------------\nRan 47 tests in 0.297s\n\nOK\n"
+    },
+    {
+      "name": "bridge_synthetic",
+      "argv": [
+        "/opt/homebrew/opt/node@22/bin/node",
+        "--test",
+        "tests/nora/bridge.test.mjs"
+      ],
+      "cwd_role": "nora_worktree",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: only bound founder events reach a private durable spool\nok 1 - only bound founder events reach a private durable spool\n  ---\n  duration_ms: 14.940542\n  type: 'test'\n  ...\n# Subtest: contradictory conversation metadata fails closed; no default agent in bound route\nok 2 - contradictory conversation metadata fails closed; no default agent in bound route\n  ---\n  duration_ms: 0.481167\n  type: 'test'\n  ...\n# Subtest: missing binding and an existing readable spool are refused\nok 3 - missing binding and an existing readable spool are refused\n  ---\n  duration_ms: 0.900708\n  type: 'test'\n  ...\n# Subtest: audio and image replies keep a visible marker without fetching media\nok 4 - audio and image replies keep a visible marker without fetching media\n  ---\n  duration_ms: 11.516291\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 95.34975\n",
+      "stderr": ""
+    },
+    {
+      "name": "bridge_actual_pinned_runner",
+      "argv": [
+        "/opt/homebrew/opt/node@22/bin/node",
+        "tests/nora/pinned_bridge_probe.mjs",
+        "/opt/homebrew/lib/node_modules/openclaw"
+      ],
+      "cwd_role": "nora_worktree",
+      "exit_code": 0,
+      "stdout": "TAP version 13\n# Subtest: actual pinned reply caller is claimed with full result and completed lifecycle\nok 1 - actual pinned reply caller is claimed with full result and completed lifecycle\n  ---\n  duration_ms: 3.079791\n  type: 'test'\n  ...\n# Subtest: actual pinned caller passes unrelated account and conversation without lifecycle claims\nok 2 - actual pinned caller passes unrelated account and conversation without lifecycle claims\n  ---\n  duration_ms: 0.48825\n  type: 'test'\n  ...\n# Subtest: conflicting or missing trusted account/channel/group metadata is never claimed\nok 3 - conflicting or missing trusted account/channel/group metadata is never claimed\n  ---\n  duration_ms: 0.65975\n  type: 'test'\n  ...\n# Subtest: actual pinned mapper and runner preserve message/account/reply/media in private spool\nok 4 - actual pinned mapper and runner preserve message/account/reply/media in private spool\n  ---\n  duration_ms: 7.398042\n  type: 'test'\n  ...\n# Subtest: actual pinned inbound claim prevents default model only on configured company route\nok 5 - actual pinned inbound claim prevents default model only on configured company route\n  ---\n  duration_ms: 0.831333\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 23.441666\n",
+      "stderr": ""
+    },
+    {
+      "name": "composed_setup_sdk",
+      "argv": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "tests/nora/composed_setup_probe.py",
+        "PRODUCT_SOURCE"
+      ],
+      "cwd_role": "nora_worktree",
+      "exit_code": 0,
+      "stdout": "{\n  \"source_sha256\": {\n    \"cli.py\": \"c63e8366c5dc8c31d3fe00a2fadd28e203b8030037c381f55b4e67011d58e278\",\n    \"operator.py\": \"72feba080ec313daf1a689b2f6c17d574a0d481f8b1feff3b46f1654a99c9323\",\n    \"brain/engine.py\": \"0d3c6e1106b393ad8694f407afa1d67d64c51347b3a272d1a841e8c4b36ae4ad\",\n    \"brain/stores.py\": \"b105016283fb14fb6a237c6aaa53d31c86c655198d9f514a698fa305ea6b4d9d\",\n    \"nora/setup.py\": \"d80739ac7cab2d76bb096fc3f611a142f5400b07261af054b172c16c1154874d\"\n  },\n  \"result\": {\n    \"evidence_level\": \"E1_synthetic_composed_sdk\",\n    \"default_inactive\": true,\n    \"idempotent_head_preserved\": true,\n    \"explicit_enable_fixture_only\": true,\n    \"post_commit_unknown_reconciled_without_remote_retry\": true,\n    \"model_imports\": 0,\n    \"real_messages\": 0,\n    \"real_account_actions\": 0\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "root_model_free_nora_cli",
+      "argv": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/cli",
+        "-p",
+        "test_nora_service.py"
+      ],
+      "cwd_role": "product_source",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "..........\n----------------------------------------------------------------------\nRan 10 tests in 0.103s\n\nOK\n"
+    },
+    {
+      "name": "whitespace",
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd_role": "nora_worktree",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

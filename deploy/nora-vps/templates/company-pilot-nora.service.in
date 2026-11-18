@@ -1,0 +1,34 @@
+# INACTIVE TEMPLATE. Interpretation remains with the separately authorized Mac operator.
+[Unit]
+Description=Company pilot model-free Nora schedule and intake
+Wants=network-online.target
+Requires=company-pilot-gateway.service
+After=network-online.target company-pilot-gateway.service
+ConditionPathExists=/etc/company-pilot/config.json
+ConditionPathExists=/etc/company-pilot/nora-approved.json
+
+[Service]
+Type=simple
+User=company-pilot
+Group=company-pilot
+WorkingDirectory=/var/lib/company-pilot
+StateDirectory=company-pilot
+StateDirectoryMode=0700
+UMask=0077
+Environment=OPENCLAW_STATE_DIR=/var/lib/company-pilot/openclaw
+Environment=OPENCLAW_CONFIG_PATH=/etc/company-pilot/openclaw.json
+EnvironmentFile=/etc/company-pilot/gateway.env
+EnvironmentFile=/etc/company-pilot/github.env
+ExecStart=/opt/company-pilot/venv/bin/python -m company_pilot --config /etc/company-pilot/config.json nora watch
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=45
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/company-pilot
+
+[Install]
+WantedBy=multi-user.target

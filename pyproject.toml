@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "company-work-map-pilot"
+version = "0.1.0"
+description = "Company work capture, evidence-linked knowledge and scheduled clarification"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["tzdata>=2025.1; sys_platform == 'win32'"]
+
+[project.scripts]
+company-pilot-access = "company_pilot.access:main"
+company-pilot = "company_pilot.cli:main"
+company-pilot-desktop = "company_pilot.desktop.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["company_pilot*"]
+
+[tool.setuptools.package-data]
+"company_pilot.desktop" = ["native/*.swift", "native/*.ps1"]
+"company_pilot.nora" = ["bridge/*.js", "bridge/*.json"]

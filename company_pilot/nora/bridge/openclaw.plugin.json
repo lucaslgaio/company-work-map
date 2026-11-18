@@ -1,0 +1,16 @@
+{
+  "id": "company-nora-bridge",
+  "name": "Company Nora clarification bridge",
+  "version": "0.2.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["accountId", "conversationId", "founderSenderId", "spoolPath"],
+    "properties": {
+      "accountId": { "type": "string", "minLength": 1 },
+      "conversationId": { "type": "string", "pattern": "^[0-9]+@g\\.us$" },
+      "founderSenderId": { "type": "string", "minLength": 1 },
+      "spoolPath": { "type": "string", "minLength": 1 }
+    }
+  }
+}
