@@ -1,6 +1,6 @@
 # Configurar o piloto com o fundador
 
-**Versão em revisão. Instalação e operação na empresa aguardam a liberação do operador.** Se `release_status` for `review_candidate`, faça somente a revisão autorizada. A conferência do pacote não libera captura, mensagens ou uso com dados da empresa.
+**Versão liberada para o piloto (`pilot_ready`).** Mesmo assim, captura, contas e mensagens só ligam com a autorização de cada pessoa, passo a passo.
 
 Este roteiro é para o assistente local com acesso a comandos. A entrevista não depende de um programa chamado `claude`: siga `docs/assistente.md`. O ciclo captura → pergunta → resposta → cartão, só com dados sintéticos, está em `docs/ciclo-local.md`. Conduza a conversa com uma pergunta por vez. Consulte primeiro ambiente, recibos, identidade, política e pendências; pergunte ao fundador apenas sobre negócio, escolhas e confirmações que faltam. Mostre a consequência de cada escolha antes de gravá-la. Empresa sem equipe participante pula a etapa de convites.
 

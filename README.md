@@ -2,7 +2,7 @@
 
 O fundador baixa este repositório e pede ao próprio assistente para seguir [START-HERE.md](START-HERE.md). Os passos do operador estão separados. Este repositório não traz empresa, pessoa, semana nem mapa de exemplo.
 
-**Pacote em revisão. Instalação e operação na empresa ainda não liberadas.** O manifesto identifica a revisão; `review_candidate` não equivale a `pilot_ready`.
+**Versão liberada para o piloto (`pilot_ready`).** A instalação pode seguir os roteiros; contas, captura e mensagens continuam desligadas até cada pessoa autorizar.
 
 | Material | Abrir |
 | --- | --- |
@@ -18,6 +18,6 @@ O fundador baixa este repositório e pede ao próprio assistente para seguir [ST
 
 O software reúne contribuições permitidas, mantém um mapa com fontes, perguntas, respostas e versões, e permite corrigir tarefas e conexões. O mapa da empresa sai das capturas que o fundador informar. Sem captura, o ciclo local avisa que ainda não há o que ler e não inventa nada.
 
-Com `review_candidate`, a instalação na empresa espera a liberação do operador. Ler este repositório não conecta conta, não envia mensagem e não liga captura.
+Ler este repositório não conecta conta, não envia mensagem e não liga captura.
 
 Os contratos estão em `contracts/v1`. O que entra no pacote preparado pelo operador está em [install/distribution.md](install/distribution.md).
