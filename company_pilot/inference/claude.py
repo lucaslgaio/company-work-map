@@ -416,7 +416,7 @@ class ClaudeInterpreter:
                 "prova ausência no registro inteiro. Não proponha map_changes, intenção de mensagem "
                 "ou exclusão de tarefa; remoção de registro é tratada pelo core sem apagar fatos "
                 "apoiados. next_question é null; o Brain controla perguntas e lacunas.",
-            "observation": "Extraia de uma a três tarefas granulares distintas apoiadas na captura. "
+            "observation": "Se a captura não mostra trabalho (aba nova, Finder, Ajustes do Sistema, título vazio ou só o sistema), devolva tasks vazio, nodes vazio, context_updates vazio e outcome no_work. Não invente tarefa para completar uma cota. Nos outros casos, extraia de uma a três tarefas granulares distintas apoiadas na captura. "
                 "Se a fonte tiver um anexo de imagem, ele é a captura da mesma janela; cite só o texto. "
                 "Cada tarefa nova precisa de evidência da observação atual em job.source_ids; "
                 "uma fonte anterior sozinha não autoriza criar trabalho novo. Não descarte uma "
@@ -600,7 +600,12 @@ class ClaudeInterpreter:
         if kind == "observation":
             supplied_ids = {task.get("id") for task in context.get("tasks", [])}
             existing_ids = [task["task_id"] for task in tasks if task["task_id"] is not None]
-            if not 1 <= len(tasks) <= 3 or not set(existing_ids) <= supplied_ids or len(set(existing_ids)) != len(existing_ids):
+            outcome = result.get("outcome")
+            empty_capture = not tasks and not result["nodes"] and not result["context_updates"] and not map_changes and not result.get("recognition_markers") and not result.get("question_answers") and not result.get("answer_assignments")
+            if outcome == "no_work":
+                if not empty_capture:
+                    raise InterpreterError("invalid_analysis")
+            elif outcome is not None or not 1 <= len(tasks) <= 3 or not set(existing_ids) <= supplied_ids or len(set(existing_ids)) != len(existing_ids):
                 raise InterpreterError("invalid_analysis")
         if kind == "answer" and not map_changes and (len(tasks) != len(job["task_ids"]) or
                 {task["task_id"] for task in tasks} != set(job["task_ids"])):

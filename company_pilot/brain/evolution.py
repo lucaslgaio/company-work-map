@@ -191,8 +191,32 @@ def decorate_question(state,question):
     return q
 
 
+def _trusted_context_ids(records, sources):
+    """Source ids the worker always supplies from active founder context."""
+    found=set()
+    def walk(value):
+        if isinstance(value, dict):
+            sid=value.get('source_id')
+            if isinstance(sid, str) and sid in sources: found.add(sid)
+            for child in value.values(): walk(child)
+        elif isinstance(value, list):
+            for child in value: walk(child)
+    for record in records or []:
+        if isinstance(record, dict) and record.get('status', 'active')=='active':
+            walk(record)
+    return found
+
+
 def observation_scope(state,job,scope,result):
     tasks=result.get('tasks',[])
+    outcome=result.get('outcome')
+    if outcome=='no_work':
+        if not isinstance(tasks,list) or tasks: raise BrainError('no_work_requires_empty_tasks')
+        if any(result.get(key) for key in ('nodes','context_updates','map_changes','recognition_markers','question_answers','answer_assignments','attention_requests')):
+            raise BrainError('no_work_cannot_add_map_content')
+        candidate_scope(state,job,scope,result)
+        return
+    if outcome is not None: raise BrainError('invalid_observation_outcome')
     if not isinstance(tasks,list) or not 1<=len(tasks)<=3:raise BrainError('observation_task_bound_required')
     ids=[t.get('task_id') for t in tasks if t.get('task_id')]
     if len(ids)!=len(set(ids)):raise BrainError('duplicate_observation_task_refinement')
@@ -214,6 +238,10 @@ def candidate_scope(state,job,scope,result):
     accepted={sid for s in state.sources.values() if s.get('kind')=='analysis' and s.get('source_scope')!='historic' for sid in s.get('input_source_ids',[])}
     required=set(job['source_ids'])|{r['source_id'] for c in state.context.values() for r in c.get('evidence',[])}
     required.update(sid for tid in supplied for sid in state.tasks[tid]['evidence_ids'])
+    # Founder-confirmed names and context claims are base context the worker always
+    # supplies. A recognition confirmation is not itself an analysis input.
+    required.update(_trusted_context_ids(getattr(state,'context_claims',None), state.sources))
+    required.update(_trusted_context_ids(getattr(state,'recognition_markers',None), state.sources))
     supplied_sources=set(scope['source_ids'])
     if not set(job['source_ids'])<=supplied_sources or not supplied_sources<=accepted|required or len(supplied_sources-required)>50:
         raise BrainError('source_not_previously_accepted_or_outside_bound')

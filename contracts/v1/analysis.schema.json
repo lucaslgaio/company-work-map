@@ -3974,6 +3974,19 @@
         "limitations"
       ],
       "additionalProperties": false
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "no_work"
+          ]
+        }
+      ]
     }
   },
   "required": [

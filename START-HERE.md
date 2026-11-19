@@ -6,7 +6,7 @@ Não conecte conta, não envie mensagem e não ligue a captura. A captura só co
 
 ## Versão
 
-No Git, `founder/pilot-release.json` traz `code_commit` igual a `HEAD`. Isso quer dizer: a versão é o commit desta pasta. O pacote Python desta pasta é `0.1.3`.
+No Git, `founder/pilot-release.json` traz `code_commit` igual a `HEAD`. Isso quer dizer: a versão é o commit desta pasta. O pacote Python desta pasta é `0.1.4`.
 
 ```text
 git rev-parse HEAD
@@ -112,15 +112,16 @@ Não invente captura, tarefa ou pessoa para preencher o mapa.
 
 ## Atualizar uma instalação que já captura
 
-Na `0.1.3` a captura do computador de trabalho entra como trabalho. O que é claramente pessoal fica só no Mac: as exclusões já gravadas pela pessoa, mais banco e corretora pessoais, saúde pessoal, namoro, streaming, redes sociais pessoais, gerenciador de senha, janela anônima e tela bloqueada. WhatsApp, LinkedIn e YouTube não estão nessa lista. Senha continua redigida. A lista completa está no `CHANGELOG.md`, na entrada `0.1.3`.
+Na `0.1.4` este Mac só decide se a janela é pessoal ou de trabalho. O que é claramente pessoal continua só aqui: as exclusões já gravadas, mais banco e corretora pessoais, saúde pessoal, namoro, streaming, redes sociais pessoais, gerenciador de senha, janela anônima e tela bloqueada. WhatsApp, LinkedIn e YouTube não estão nessa lista. Senha continua redigida. O que é trabalho segue para o repositório, com o texto e, se a Gravação de Tela estiver autorizada, a imagem em `attachments/`.
 
-A imagem da janela de trabalho também entra, ligada à fonte em `attachments/`. Sem a permissão de Gravação de Tela, o texto continua.
+Este Mac não chama mais modelo e não monta o mapa. A leitura das capturas e das respostas da entrevista fica com o operador externo, na conta passada a `setup external-analyst`. O laço dele está em `OPERATOR.md`. A resposta da entrevista continua sendo gravada aqui; a análise dela também vai para esse operador. Trabalhos que já estavam na fila voltam a ficar prontos nesse comando, sem reparo de dado no repositório.
 
 Na pasta do checkout que o serviço usa, com `CONFIG` da empresa e `DEVICE_CONFIG` do coletor:
 
 ```text
 git fetch origin
 git checkout COMMIT_PUBLICADO
+python3 -m company_pilot --config CONFIG setup external-analyst --login LOGIN_DO_OPERADOR
 python3 -m company_pilot --config CONFIG setup screenshots --founder yes --team yes
 python3 -m company_pilot --config CONFIG setup consent --participate yes --screenshots yes --reviewed-defaults
 python3 -m company_pilot.desktop enable-capture --config DEVICE_CONFIG
@@ -129,7 +130,9 @@ python3 -m company_pilot.desktop screenshots --config DEVICE_CONFIG
 python3 -m company_pilot.desktop status --config DEVICE_CONFIG
 ```
 
-Não use `git pull`, não instale com pip e não use `--break-system-packages`. Se `screenshots` disser que a Gravação de Tela não está autorizada, abra Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, adicione o coletor e rode de novo o `launchctl kickstart`. Confira `actually_taking` e, no repositório da empresa, as primeiras capturas em `views/fontes.md` e as atividades em `views/mapa.md`. A quarentena que ainda estiver no Mac é relida nesse ciclo.
+`LOGIN_DO_OPERADOR` é o login GitHub de quem grava a análise, não o do fundador. Não use `git pull`, não instale com pip e não use `--break-system-packages`. Não rode `operator watch` neste computador.
+
+Se `screenshots` disser que a Gravação de Tela não está autorizada, o JSON traz `binary_path` e o passo: Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, botão +, Cmd+Shift+G, colar esse caminho. A permissão é desse executável (`mac-capture`), não do Python, do Claude nem do Chrome. Rode de novo o `launchctl kickstart`. Confira `actually_taking`. No repositório da empresa, o texto aparece em `views/fontes.md` assim que a captura sai; a atividade em `views/mapa.md` aparece depois que o operador gravar a análise. A quarentena que ainda estiver no Mac é relida nesse ciclo.
 
 ## Grupo da Nora
 

@@ -64,7 +64,7 @@ PYTHON -m company_pilot --config COMPANY_CONFIG setup status
 
 Os comandos geram os identificadores e guardam recibos privados antes do envio. Se o resultado for desconhecido, repita **o mesmo comando**: a operação usa a mesma identidade e não cria uma segunda resposta. Consulte `interview next` para apresentar a próxima pergunta; respostas iguais a perguntas diferentes ficam distintas pelo recibo da pergunta. Preserve `operation-receipts.json` e `interview-prompt.json`. A trava pertence ao processo e é liberada quando ele termina, inclusive por interrupção. Repita o comando original após a interrupção; uma execução concorrente ainda ativa continua protegida.
 
-`pending_analysis` significa que a resposta está guardada e ainda precisa de análise. Mostre idade real da pendência, tentativas e motivo disponível em `setup status`. O operador deve manter `operator watch` funcionando em seu computador autorizado, acordado e online. Um recibo antigo ou o armazenamento online não comprovam processo ativo. Registre o tempo realmente observado entre envio e processamento; não prometa prazo nem repita a resposta para acelerar a fila. Erro de análise volta ao operador sem apagar a resposta. A interpretação contínua usa a conta do operador no computador dele; fundador e equipe não precisam de assinatura própria para essa análise.
+`pending_analysis` significa que a resposta está guardada e ainda precisa de análise. Mostre idade real da pendência, tentativas e motivo disponível em `setup status`. A análise não roda neste Mac e não usa assinatura de modelo daqui. O operador externo, na conta configurada, segue `OPERATOR.md` (`operator pull`, `operator export`, `operator submit`) no computador dele. Um recibo antigo ou o armazenamento online não comprovam que ele já leu. Registre o tempo realmente observado entre envio e processamento; não prometa prazo nem repita a resposta para acelerar a fila. Erro de análise volta ao operador, com o motivo, sem apagar a resposta.
 
 Correção e desconhecimento têm caminhos próprios, inclusive depois da conversa inicial:
 
@@ -93,14 +93,14 @@ PYTHON -m company_pilot --config COMPANY_CONFIG setup confirm-names --name "NOME
 
 O comando não escolhe nomes sozinho. Uma janela sem nome confirmado entra como trabalho. Continua de fora só o que for claramente pessoal: as exclusões deste computador e a lista embutida (banco e corretora pessoais, saúde pessoal, namoro, streaming, redes sociais pessoais, gerenciador de senha, janela anônima, tela bloqueada). WhatsApp, LinkedIn e YouTube não estão nessa lista.
 
-A imagem da janela de trabalho é o padrão. Grave `setup screenshots --founder yes --team yes` e, no consentimento desta pessoa, `--screenshots yes`. Se o macOS ainda não autorizou a Gravação de Tela, o texto segue. Abra Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, adicione o coletor e reinicie o serviço:
+A imagem da janela de trabalho é o padrão. Grave `setup screenshots --founder yes --team yes` e, no consentimento desta pessoa, `--screenshots yes`. Se o macOS ainda não autorizou a Gravação de Tela, o texto segue. `screenshots` imprime `binary_path`: é o executável `mac-capture` desta instalação, não o Python, o Claude nem o Chrome. Abra Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, clique no botão +, pressione Cmd+Shift+G, cole esse caminho e confirme. Depois reinicie o serviço:
 
 ```text
 launchctl kickstart -k "gui/$(id -u)/com.company-pilot.desktop"
 PYTHON -m company_pilot.desktop screenshots --config DEVICE_CONFIG
 ```
 
-`actually_taking` diz se a imagem está sendo gravada. `DEVICE_CONFIG` é a configuração do coletor neste computador.
+`actually_taking` diz se a imagem está sendo gravada. `DEVICE_CONFIG` é a configuração do coletor neste computador. Com a permissão, a imagem fica em `attachments/` e a fonte aponta para ela.
 
 Após a decisão pessoal, o assistente usa `setup consent --participate yes|no --screenshots yes|no --reviewed-defaults`, acrescentando `--personal-exclusion TERMO` apenas para termos escolhidos neste computador. O comando gera os arquivos e o recibo; os termos pessoais ficam locais. Recusa mantém captura bloqueada. Política nova exige nova conferência da pessoa, sem reaplicar um aceite antigo para contornar o bloqueio.
 

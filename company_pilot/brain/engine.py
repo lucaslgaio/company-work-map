@@ -252,6 +252,37 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         return [job for job in self.snapshot()["pending_jobs"] if job["status"] == "pending"
                 and job.get("next_attempt_at", current) <= current and not awaiting_manual_interview(job)]
 
+    def analysis_queue(self):
+        """Every pending analysis, including backoff and repeated interview refusals.
+
+        Only the configured semantic operator may read this queue. The founder's
+        device stores captures and answers; it does not interpret them.
+        """
+        state = _State(self.store.read())
+        self._worker(state, self.store.authenticated_actor())
+        return [job for job in self.snapshot()["pending_jobs"] if job["status"] == "pending"]
+
+    def assign_external_analyst(self, login, event_id):
+        """Hand analysis to one operator and make queued jobs eligible immediately."""
+        if not isinstance(login, str) or not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})?", login):
+            raise BrainError("semantic_operator_login_required")
+
+        def apply(state, actor):
+            self._founder(state, actor)
+            state.company["semantic_workers"] = [login]
+            state.company["policy_version"] += 1
+            current = now()
+            reset = []
+            for job in state.jobs.values():
+                if job.get("status") != "pending":
+                    continue
+                job["next_attempt_at"] = current
+                reset.append(job["id"])
+            return {"semantic_workers": [login], "analysis": "external", "backoff_reset": sorted(reset),
+                    "policy_version": state.company["policy_version"]}
+
+        return self._transaction("external_analyst", event_id, {"login": login}, apply)
+
     def device_policy(self):
         snapshot = self.snapshot()
         company, actor = snapshot["company"], self.store.authenticated_actor()
@@ -718,7 +749,7 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         if jobs:
             route = manual_interview_route(jobs[:1])
             message = route["message"] if route else (
-                "Sua resposta já está guardada. O assistente pode lê-la e registrar o entendimento, ou o texto fica como você escreveu se não houver assistente. Não é preciso o programa claude.")
+                "Sua resposta já está guardada. O operador externo lê o trabalho e registra o entendimento. Este computador não chama o modelo.")
             pending = {**progress, "business_context_status": "pending_analysis", "state": "pending_analysis", "job_id": jobs[0]["id"], "question": None,
                        "founder_message": message}
             if route:
@@ -992,8 +1023,10 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                 return job["receipt"]
             if job["status"] == "unassigned":
                 raise BrainError("ambiguous_answer_requires_assignment")
-            if not isinstance(result, dict) or set(result) - {"tasks", "nodes", "context_updates", "next_question", "answer_assignments", "map_changes", "message_intent", "recognition_markers", "record_extraction", "question_answers", "attention_requests"}:
+            if not isinstance(result, dict) or set(result) - {"tasks", "nodes", "context_updates", "next_question", "answer_assignments", "map_changes", "message_intent", "recognition_markers", "record_extraction", "question_answers", "attention_requests", "outcome"}:
                 raise BrainError("invalid_analysis_result")
+            if result.get("outcome") not in (None, "no_work") or (result.get("outcome") and job["kind"] != "observation"):
+                raise BrainError("invalid_observation_outcome")
             allowed = set(job["source_ids"])
             for value in state.context.values():
                 allowed.update(ref["source_id"] for ref in value.get("evidence", []))
@@ -1310,6 +1343,8 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                 receipt["selected_question_ids"] = message_receipt["question_ids"]
             if job["kind"] == "company_record":
                 receipt["record_extraction"] = result["record_extraction"]
+            if result.get("outcome") == "no_work":
+                receipt["outcome"] = "no_work"
             if job.get("excluded_context_topics"):
                 receipt["deferred_topics"] = job["excluded_context_topics"]
             if omitted_quotes:
@@ -1324,9 +1359,10 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         return self._transaction("analysis", identifier(job_id, "apply"), payload, apply)
 
     def mark_job_error(self, job_id, code, *, rejection_reason=None, quote_failures=None):
-        from .diagnostics import REJECTIONS
+        from .diagnostics import rejection_label
         from .quotes import bound_quote_failures
-        if rejection_reason is not None and rejection_reason not in REJECTIONS:
+        label = rejection_label(rejection_reason) if rejection_reason is not None else None
+        if rejection_reason is not None and label is None:
             raise BrainError("closed_rejection_reason_required")
         if not isinstance(code, str) or len(code) > 80:
             raise BrainError("stable_error_code_required")
@@ -1338,8 +1374,8 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                 attempts = job["attempts"] + 1
                 job.update(status="pending", error_code=code, attempts=attempts,
                            next_attempt_at=(datetime.now(timezone.utc) + timedelta(seconds=min(3600, 60 * (2 ** min(attempts - 1, 6))))).isoformat())
-                if rejection_reason:
-                    job.update(rejection_reason=rejection_reason, reason=REJECTIONS[rejection_reason])
+                if label:
+                    job.update(rejection_reason=rejection_reason, reason=label)
                 else:
                     job.pop("rejection_reason", None)
                     job.pop("reason", None)

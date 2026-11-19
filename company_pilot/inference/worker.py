@@ -179,6 +179,92 @@ def _accepted_comparison_sources(context, sources, required):
     return candidates[-50:]
 
 
+def scope_for_apply(job, map_scope, result):
+    """The same scope the worker would pass into apply_analysis, or 'invalid'."""
+    needs = job["kind"] in ("message", "company_record") or (
+        job["kind"] == "observation" and map_scope and set(map_scope["source_ids"]) - set(job["source_ids"]))
+    if needs:
+        return map_scope if map_scope is not None else "invalid"
+    if result.get("map_changes"):
+        if job["kind"] != "answer" or not job.get("task_ids") or map_scope is None:
+            return "invalid"
+        return map_scope
+    return None
+
+
+def prepare_context(brain, job):
+    """Build the exact context and map scope run_once would send to an interpreter."""
+    context = brain.snapshot()
+    sources = {source["id"]: source for source in context.get("sources", [])}
+    if job["kind"] == "company_record" and job.get("source_ids"):
+        primary = sources.get(job["source_ids"][0], {})
+        logical_id = primary.get("logical_record_id")
+        catalog = context.get("company_records", [])
+        entry = (catalog.get(logical_id) if isinstance(catalog, dict) else
+                 next((item for item in catalog if logical_id and
+                       item.get("id", item.get("logical_record_id")) == logical_id), None))
+        if entry is not None and entry.get("current_source_id") != primary.get("id"):
+            return {"historic": True, "context": None, "map_scope": None}
+    wanted = set(job.get("source_ids", []))
+    if job["kind"] == "message":
+        explicit_questions = set(job.get("question_ids", []))
+        question_ids = set(job.get("candidate_question_ids", [])) | explicit_questions
+        questions = [question for question in context.get("questions", [])
+                     if question["id"] in question_ids and question.get("status") != "superseded"
+                     and (question.get("status") != "resolved" or question["id"] in explicit_questions)]
+    else:
+        question_ids = {qid for sid in wanted for qid in sources.get(sid, {}).get("question_ids", [])}
+        question_ids.update(job.get("candidate_question_ids", []))
+        questions = [question for question in context.get("questions", []) if question["id"] in question_ids]
+    wanted.update(_evidence_ids(questions))
+    context_fields = context.get("context", {})
+    wanted.update(_evidence_ids(context_fields))
+    active_context = {}
+    for key in ("context_claims", "recognition_markers"):
+        if key in context:
+            active_context[key] = _active_records(context, key)
+            wanted.update(_evidence_ids(active_context[key]))
+    tasks = context.get("tasks", [])
+    map_scope = None
+    if job["kind"] in ("answer", "message"):
+        tasks, nodes, edges = (_message_map(context, job, sources) if job["kind"] == "message"
+                               else _answer_map(context, job, sources))
+        wanted.update(_evidence_ids([tasks, nodes, edges]))
+        map_scope = {"tasks": [_version_ref(task) for task in tasks],
+                     "nodes": [_version_ref(node) for node in nodes],
+                     "edges": [_version_ref(edge) for edge in edges],
+                     "source_ids": sorted(wanted & sources.keys())}
+    else:
+        tasks = (_record_tasks(context, job, sources) if job["kind"] == "company_record"
+                 else _observation_tasks(context, job, sources) if job["kind"] == "observation"
+                 else [task for task in tasks if not task.get("superseded_by")][-20:])
+        wanted.update(_evidence_ids(tasks))
+        if job["kind"] == "company_record":
+            map_scope = {"tasks": [_version_ref(task) for task in tasks], "nodes": [], "edges": [],
+                         "source_ids": sorted(wanted & sources.keys())}
+        if job["kind"] == "observation":
+            task_ids = {task["id"] for task in tasks}
+            questions = [copy.deepcopy(question) for question in context.get("questions", [])
+                         if question.get("status") == "pending" and question.get("task_id") in task_ids][:100]
+            for question in questions:
+                if "known_facts" in question:
+                    question["known_facts"] = [fact for fact in question["known_facts"]
+                                               if fact.get("task_id") in task_ids]
+            wanted.update(_evidence_ids(questions))
+            wanted.update(_accepted_comparison_sources(context, sources, wanted))
+            map_scope = {"tasks": [_version_ref(task) for task in tasks], "nodes": [], "edges": [],
+                         "source_ids": sorted(wanted & sources.keys())}
+    context = {key: context[key] for key in ("company", "context", "interview", "nodes") if key in context} | {
+        "tasks": tasks, "sources": [sources[key] for key in sorted(wanted) if key in sources], "questions": questions,
+    } | active_context
+    if map_scope is not None and (job["kind"] != "observation" or
+            set(map_scope["source_ids"]) - set(job["source_ids"])):
+        if job["kind"] in ("answer", "message"):
+            context.update(nodes=nodes, edges=edges)
+        context["map_scope"] = copy.deepcopy(map_scope)
+    return {"historic": False, "context": copy.deepcopy(context), "map_scope": map_scope}
+
+
 class SemanticWorker:
     def __init__(self, brain, interpreter):
         self.brain = brain
@@ -201,10 +287,14 @@ class SemanticWorker:
 
     @staticmethod
     def _rejection(error):
-        from ..brain.diagnostics import REJECTIONS
-        reason = str(error) if str(error) in REJECTIONS else None
-        failures = getattr(error, "quote_failures", None) if reason == "source_quote_not_found" else None
-        return reason, failures
+        from ..brain.diagnostics import is_rejection_code
+        code = getattr(error, "code", None)
+        if not isinstance(code, str):
+            code = str(error)
+        if not is_rejection_code(code):
+            return None, None
+        failures = getattr(error, "quote_failures", None) if code == "source_quote_not_found" else None
+        return code, failures
 
     def _completion(self, job_id, receipt):
         if any(item.get("status") == "unresolved" for item in receipt.get("question_outcomes", [])):
@@ -240,80 +330,13 @@ class SemanticWorker:
             return {"status": "idle"}
         job = jobs[0]
         job_id = job["id"]
-        map_scope = None
         try:
-            context = self.brain.snapshot()
-            # Send only this job's authorized sources and a bounded candidate map,
-            # rather than repeatedly sending every historic raw model response.
-            sources = {source["id"]: source for source in context.get("sources", [])}
-            if job["kind"] == "company_record" and job.get("source_ids"):
-                primary = sources.get(job["source_ids"][0], {})
-                logical_id = primary.get("logical_record_id")
-                catalog = context.get("company_records", [])
-                entry = (catalog.get(logical_id) if isinstance(catalog, dict) else
-                         next((item for item in catalog if logical_id and
-                               item.get("id", item.get("logical_record_id")) == logical_id), None))
-                if entry is not None and entry.get("current_source_id") != primary.get("id"):
-                    return self._historic_record(job_id)
-            wanted = set(job.get("source_ids", []))
-            if job["kind"] == "message":
-                explicit_questions = set(job.get("question_ids", []))
-                question_ids = set(job.get("candidate_question_ids", [])) | explicit_questions
-                questions = [question for question in context.get("questions", [])
-                             if question["id"] in question_ids and question.get("status") != "superseded"
-                             and (question.get("status") != "resolved" or question["id"] in explicit_questions)]
-            else:
-                question_ids = {qid for sid in wanted for qid in sources.get(sid, {}).get("question_ids", [])}
-                question_ids.update(job.get("candidate_question_ids", []))
-                questions = [question for question in context.get("questions", []) if question["id"] in question_ids]
-            wanted.update(_evidence_ids(questions))
-            context_fields = context.get("context", {})
-            wanted.update(_evidence_ids(context_fields))
-            active_context = {}
-            for key in ("context_claims", "recognition_markers"):
-                if key in context:
-                    active_context[key] = _active_records(context, key)
-                    wanted.update(_evidence_ids(active_context[key]))
-            tasks = context.get("tasks", [])
-            if job["kind"] in ("answer", "message"):
-                tasks, nodes, edges = (_message_map(context, job, sources) if job["kind"] == "message"
-                                       else _answer_map(context, job, sources))
-                wanted.update(_evidence_ids([tasks, nodes, edges]))
-                map_scope = {"tasks": [_version_ref(task) for task in tasks],
-                             "nodes": [_version_ref(node) for node in nodes],
-                             "edges": [_version_ref(edge) for edge in edges],
-                             "source_ids": sorted(wanted & sources.keys())}
-            else:
-                tasks = (_record_tasks(context, job, sources) if job["kind"] == "company_record"
-                         else _observation_tasks(context, job, sources) if job["kind"] == "observation"
-                         else [task for task in tasks if not task.get("superseded_by")][-20:])
-                wanted.update(_evidence_ids(tasks))
-                if job["kind"] == "company_record":
-                    map_scope = {"tasks": [_version_ref(task) for task in tasks], "nodes": [], "edges": [],
-                                 "source_ids": sorted(wanted & sources.keys())}
-                if job["kind"] == "observation":
-                    task_ids = {task["id"] for task in tasks}
-                    questions = [copy.deepcopy(question) for question in context.get("questions", [])
-                                 if question.get("status") == "pending" and question.get("task_id") in task_ids][:100]
-                    for question in questions:
-                        if "known_facts" in question:
-                            question["known_facts"] = [fact for fact in question["known_facts"]
-                                                       if fact.get("task_id") in task_ids]
-                    wanted.update(_evidence_ids(questions))
-                    wanted.update(_accepted_comparison_sources(context, sources, wanted))
-                    map_scope = {"tasks": [_version_ref(task) for task in tasks], "nodes": [], "edges": [],
-                                 "source_ids": sorted(wanted & sources.keys())}
-            context = {key: context[key] for key in ("company", "context", "interview", "nodes") if key in context} | {
-                "tasks": tasks, "sources": [sources[key] for key in sorted(wanted) if key in sources], "questions": questions,
-            } | active_context
-            if map_scope is not None and (job["kind"] != "observation" or
-                    set(map_scope["source_ids"]) - set(job["source_ids"])):
-                if job["kind"] in ("answer", "message"):
-                    context.update(nodes=nodes, edges=edges)
-                context["map_scope"] = copy.deepcopy(map_scope)
-            context = copy.deepcopy(context)
+            prepared = prepare_context(self.brain, job)
         except Exception:
             return self._pending(job_id, "context_unavailable")
+        if prepared["historic"]:
+            return self._historic_record(job_id)
+        context, map_scope = prepared["context"], prepared["map_scope"]
         try:
             result = self.interpreter.interpret(copy.deepcopy(job), context)
         except InterpreterError as error:
@@ -323,15 +346,11 @@ class SemanticWorker:
         try:
             metadata = getattr(self.interpreter, "last_metadata", None)
             kwargs = {"metadata": metadata} if metadata else {}
-            if job["kind"] in ("message", "company_record") or (job["kind"] == "observation" and map_scope and
-                    set(map_scope["source_ids"]) - set(job["source_ids"])):
-                if map_scope is None:
-                    return self._pending(job_id, "invalid_analysis")
-                kwargs["map_scope"] = map_scope
-            elif result.get("map_changes"):
-                if job["kind"] != "answer" or not job.get("task_ids") or map_scope is None:
-                    return self._pending(job_id, "invalid_analysis")
-                kwargs["map_scope"] = map_scope
+            scope = scope_for_apply(job, map_scope, result)
+            if scope == "invalid":
+                return self._pending(job_id, "invalid_analysis")
+            if scope is not None:
+                kwargs["map_scope"] = scope
             receipt = self.brain.apply_analysis(job_id, result, **kwargs)
         except Exception as error:
             reason, failures = self._rejection(error)

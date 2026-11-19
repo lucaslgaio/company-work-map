@@ -363,22 +363,23 @@ def participant_note(config_path, name, login=None):
 
 def status(brain, health):
     try:
-        from .brain.diagnostics import REJECTIONS
+        from .brain.diagnostics import rejection_label
     except ImportError:  # Older prepared cores have only generic failure codes.
-        REJECTIONS = {}
+        rejection_label = lambda _code: None
     snapshot = brain.snapshot()
     jobs = [{key:job[key] for key in ('id','status','kind','created_at','age_seconds','attempts','next_attempt_at','error_code') if key in job}
             for job in snapshot.get('pending_jobs',[])]
     for row, job in zip(jobs, snapshot.get('pending_jobs', [])):
         code = job.get('rejection_reason')
-        if code in REJECTIONS:
-            row.update(rejection_reason=code, reason=REJECTIONS[code])
+        label = rejection_label(code)
+        if label:
+            row.update(rejection_reason=code, reason=label)
         elif row.get('error_code'):
             row['reason'] = 'A análise não foi aplicada. O operador precisa conferir o código e a próxima tentativa, preservando a resposta.'
     interview = brain.interview_next()
     result = {'state':'setup_status','interview':interview,'jobs':jobs,'access':brain.access_policy(),
             'operator':health,'process_liveness':'not_verified','wait_estimate':None,
-            'message':'O armazenamento online não mantém a análise funcionando. O operador deve manter operator watch ativo, acordado e online. Pendências e falhas acima permanecem abertas.'}
+            'message':'O armazenamento online não analisa sozinho. O operador externo sincroniza com operator pull, lê os trabalhos com operator export e grava com operator submit. O computador do fundador não chama modelo. Pendências e falhas acima permanecem abertas.'}
     if interview.get('recognition'):
         result['recognition'] = interview['recognition']
     return result
