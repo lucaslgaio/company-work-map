@@ -25,7 +25,9 @@ git fetch origin
 git checkout COMMIT_PUBLICADO
 ```
 
-`COMMIT_PUBLICADO` é o commit desta versão no Git. Não rode `python3 -m pip install -e .` e não use `--break-system-packages`. Os comandos são `python3 -m company_pilot`, com a configuração que o fundador já tem no lugar de `CONFIG`, o login GitHub do operador no lugar de `LOGIN_DO_OPERADOR` e a configuração do coletor no lugar de `DEVICE_CONFIG`:
+`COMMIT_PUBLICADO` é o commit desta versão no Git. Não rode `python3 -m pip install -e .` e não use `--break-system-packages`. Os comandos são `python3 -m company_pilot`, com a configuração que o fundador já tem no lugar de `CONFIG`, o login GitHub do operador no lugar de `LOGIN_DO_OPERADOR` e a configuração do coletor no lugar de `DEVICE_CONFIG`.
+
+Se o `operator watch` da `0.1.3` ainda estiver rodando neste Mac, pare-o antes: Ctrl+C no terminal, ou encerre o processo em segundo plano. A fila antiga não pode chamar o modelo junto com esta atualização.
 
 ```text
 python3 -m company_pilot --config CONFIG setup external-analyst --login LOGIN_DO_OPERADOR

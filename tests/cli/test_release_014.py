@@ -55,6 +55,34 @@ class FounderDeviceTests(unittest.TestCase):
             self.assertEqual(calls, [])
             self.assertEqual(json.loads(out.getvalue())["analysis"], "not_run")
 
+    def test_unknown_analyst_identity_does_not_call_the_model(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            config = root / "company.json"
+            from company_pilot.operator import write_private_json
+            write_private_json(config, {"schema_version": 1, "mode": "synthetic",
+                                         "store": {"kind": "local", "root": str(root / "brain")},
+                                         "operator": {"health_file": str(root / "health.json")},
+                                         "nora": {"enabled": False}})
+            calls = []
+
+            class Opaque:
+                def snapshot(self):
+                    raise RuntimeError("identity unavailable")
+
+                @property
+                def store(self):
+                    raise RuntimeError("identity unavailable")
+
+            out, err = StringIO(), StringIO()
+            code = main(["--config", str(config), "operator", "once"], out=out, err=err,
+                        brain_factory=lambda _config: Opaque(),
+                        interpreter_factory=lambda _config: calls.append("model"))
+            self.assertEqual(code, 0, err.getvalue())
+            self.assertEqual(calls, [])
+            self.assertEqual(json.loads(out.getvalue())["status"], "external")
+            self.assertFalse(json.loads(out.getvalue())["local_model"])
+
 
 if __name__ == "__main__":
     unittest.main()

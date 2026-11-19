@@ -14,7 +14,8 @@ python3 -m company_pilot --config CONFIG operator export --output JOBS
 `pull` sincroniza o mirror. `export` grava um arquivo por trabalho pendente e um `index.json`. Cada arquivo traz:
 
 - `job.id` e `job.kind`
-- `sources`: o texto e, quando houver imagem, `attachment_path` (arquivo em `attachments/` no mirror)
+- `sources`: o texto; numa entrevista, `question_topic` é o assunto da pergunta
+- quando houver imagem, `attachment_path` é um arquivo real relativo a `JOBS` (`JOBS/attachments/<sha>.jpg`). O mirror do GitHub não tem esse arquivo solto: a imagem estava embutida em base64 e o export gravou os bytes aqui. Abra esse caminho. Não procure o mesmo nome dentro do mirror
 - `map_scope` e `context`: o recorte que a gravação vai conferir
 - `contract.schema` e `contract.instructions`
 - se a tentativa anterior foi recusada, `job.rejection_reason`, `job.reason` e `job.quote_failures`
@@ -27,8 +28,15 @@ Para captura (`observation`):
 
 - há trabalho: de 1 a 3 tarefas; a tarefa nova cita a captura atual
 - não há trabalho (aba nova, Finder, Ajustes do Sistema, título vazio ou só o sistema): `tasks` vazio e `"outcome": "no_work"`; deixe `nodes` e `context_updates` vazios
+- `next_question` é `null`
 
-`next_question` é `null`. Campo desconhecido fica `value` null, `basis` `inferred`, `evidence` vazio.
+Para resposta de entrevista (`interview`): `tasks` vazio e `nodes` vazio. Um `context_updates` com `topic` igual a `question_topic` da fonte, `mode` `add`, `basis` `reported`, e `value` e `quote` iguais ao texto inteiro da resposta. `next_question` é `null`, ou `{topic, text}` se ainda faltar um assunto (`activities`, `people`, `stages`, `tracking` ou `documents`).
+
+```json
+{"tasks": [], "nodes": [], "context_updates": [{"topic": "TOPIC_DA_FONTE", "value": "TEXTO_INTEIRO_DA_FONTE", "basis": "reported", "mode": "add", "evidence": [{"source_id": "ID_DA_FONTE", "quote": "TEXTO_INTEIRO_DA_FONTE"}]}], "next_question": null}
+```
+
+Campo desconhecido fica `value` null, `basis` `inferred`, `evidence` vazio.
 
 ## 3. Enviar
 

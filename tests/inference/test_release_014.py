@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from company_pilot.brain import Brain, LocalStore
+from company_pilot.brain.stores import BINARY_PREFIX
 from company_pilot.brain.engine import FIELDS
 from company_pilot.brain.gitlocal import LocalGitStore
 from company_pilot.desktop.collector import Collector, NativeFailure, flush
@@ -90,6 +91,70 @@ class ExternalAnalystTests(unittest.TestCase):
         self.assertTrue(applied["ok"], applied)
         self.assertEqual(applied["receipt"]["outcome"], "no_work")
         self.assertEqual(self.operator.snapshot()["tasks"], [])
+
+    def test_github_mirror_image_is_written_next_to_the_job(self):
+        company = self.brain.snapshot()["company"]
+        png = b"\x89PNG\r\n\x1a\nSYNTHETIC-IMAGE"
+        digest = hashlib.sha256(png).hexdigest()
+        event = uid()
+        uploaded = self.brain.upload_attachment(event, png, digest)
+        text = "Foto da medição da laje."
+        payload = observation(company, text, "Planilha com foto")
+        payload["event_id"] = event
+        payload["content"]["sha256"] = hashlib.sha256(text.encode()).hexdigest()
+        payload["screenshot"] = {"attachment_id": uploaded["attachment_id"], "sha256": digest, "media_type": "image/png"}
+        self.brain.ingest_observation(payload)
+        stored = self.operator.store.read().files
+        repo_path = next(path for path in stored if path.startswith("attachments/"))
+        self.assertTrue(stored[repo_path].startswith(BINARY_PREFIX))
+        self.assertFalse((self.operator.store.root / repo_path).is_file())
+        export_jobs(self.operator, self.root / "jobs")
+        body = json.loads(next(path for path in (self.root / "jobs").glob("*.json") if path.name != "index.json").read_text(encoding="utf-8"))
+        relative = body["sources"][0]["attachment_path"]
+        self.assertEqual(relative, "attachments/" + digest + ".png")
+        written = self.root / "jobs" / relative
+        self.assertEqual(written.read_bytes(), png)
+        self.assertEqual(body["attachment_paths"], [relative])
+
+    def test_export_reads_the_store_once_for_many_jobs(self):
+        company = self.brain.snapshot()["company"]
+        for index in range(4):
+            self.brain.ingest_observation(observation(company, f"Janela de trabalho {index}.", f"Planilha {index}"))
+
+        class Counting(LocalStore):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.reads = 0
+
+            def read(self):
+                self.reads += 1
+                return super().read()
+
+        counted = Counting(self.operator.store.root, actor="analista-sintetico")
+        export_jobs(Brain(counted), self.root / "bulk-jobs")
+        self.assertEqual(len(list((self.root / "bulk-jobs").glob("*.json"))) - 1, 4)
+        self.assertLessEqual(counted.reads, 4)
+
+    def test_interview_answer_exported_and_submitted_as_documented(self):
+        self.brain.interview_next()
+        text = "A oficina entrega lajes medidas para a obra."
+        stored = self.brain.interview_answer(text, uid())
+        self.assertEqual(stored["state"], "pending_analysis")
+        export_jobs(self.operator, self.root / "jobs")
+        body = json.loads(next(path for path in (self.root / "jobs").glob("*.json") if path.name != "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(body["job"]["kind"], "interview")
+        instructions = body["contract"]["instructions"]
+        self.assertIn('"mode": "add"', instructions)
+        self.assertIn('"next_question": null', instructions)
+        self.assertIn("kind interview", instructions)
+        source = body["sources"][0]
+        self.assertEqual(source["question_topic"], "activities")
+        result = {"tasks": [], "nodes": [], "context_updates": [{
+            "topic": source["question_topic"], "value": source["text"], "basis": "reported", "mode": "add",
+            "evidence": [{"source_id": source["id"], "quote": source["text"]}]}], "next_question": None}
+        applied = submit_analysis(self.operator, body["job"]["id"], result)
+        self.assertTrue(applied["ok"], applied)
+        self.assertIn(text, self.operator.snapshot()["context"]["activities"]["value"])
 
     def test_interview_answer_stays_on_the_founder_and_is_read_by_the_operator(self):
         self.brain.interview_next()

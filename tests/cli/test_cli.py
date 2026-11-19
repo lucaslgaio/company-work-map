@@ -165,6 +165,8 @@ class CliTests(unittest.TestCase):
 
     def test_operator_uses_injected_interpreter_and_hides_receipt_content(self):
         self.configure()
+        self.brain.store = types.SimpleNamespace(authenticated_actor=lambda: {"id": "fixture-founder"})
+        self.brain.data["company"]["semantic_workers"] = ["fixture-founder"]
         sentinel = object()
         class Worker:
             def __init__(inner, brain, interpreter):

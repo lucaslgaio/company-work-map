@@ -258,9 +258,14 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         Only the configured semantic operator may read this queue. The founder's
         device stores captures and answers; it does not interpret them.
         """
-        state = _State(self.store.read())
-        self._worker(state, self.store.authenticated_actor())
-        return [job for job in self.snapshot()["pending_jobs"] if job["status"] == "pending"]
+        view, _files = self.analyst_view()
+        return [job for job in view["pending_jobs"] if job["status"] == "pending"]
+
+    def analyst_view(self):
+        """One authorized read: the queue view and the raw files, including images."""
+        snapshot, actor = self._read_with_actor()
+        self._worker(_State(snapshot), actor)
+        return self._snapshot(snapshot, actor), snapshot.files
 
     def assign_external_analyst(self, login, event_id):
         """Hand analysis to one operator and make queued jobs eligible immediately."""

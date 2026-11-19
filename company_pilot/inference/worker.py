@@ -192,9 +192,9 @@ def scope_for_apply(job, map_scope, result):
     return None
 
 
-def prepare_context(brain, job):
+def prepare_context(brain, job, snapshot=None):
     """Build the exact context and map scope run_once would send to an interpreter."""
-    context = brain.snapshot()
+    context = brain.snapshot() if snapshot is None else snapshot
     sources = {source["id"]: source for source in context.get("sources", [])}
     if job["kind"] == "company_record" and job.get("source_ids"):
         primary = sources.get(job["source_ids"][0], {})

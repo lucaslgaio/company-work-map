@@ -116,7 +116,9 @@ Na `0.1.4` este Mac só decide se a janela é pessoal ou de trabalho. O que é c
 
 Este Mac não chama mais modelo e não monta o mapa. A leitura das capturas e das respostas da entrevista fica com o operador externo, na conta passada a `setup external-analyst`. O laço dele está em `OPERATOR.md`. A resposta da entrevista continua sendo gravada aqui; a análise dela também vai para esse operador. Trabalhos que já estavam na fila voltam a ficar prontos nesse comando, sem reparo de dado no repositório.
 
-Na pasta do checkout que o serviço usa, com `CONFIG` da empresa e `DEVICE_CONFIG` do coletor:
+Na pasta do checkout que o serviço usa, com `CONFIG` da empresa e `DEVICE_CONFIG` do coletor.
+
+Se o `operator watch` da `0.1.3` ainda estiver rodando neste Mac, pare-o antes dos comandos abaixo. No terminal dele, Ctrl+C. Se ficou em segundo plano, encerre esse processo. Não deixe a fila antiga chamar o modelo durante a atualização.
 
 ```text
 git fetch origin

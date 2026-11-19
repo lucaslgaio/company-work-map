@@ -162,14 +162,17 @@ def build_brain(config):
 
 
 def _device_skips_model(config, brain):
-    """The founder machine stores captures. It does not call the analyst model."""
+    """The founder machine stores captures. It does not call the analyst model.
+
+    If this computer cannot prove it is the configured analyst, do not call the model.
+    """
     if config.get("operator", {}).get("analysis") == "external":
         return True
     try:
         actor = brain.store.authenticated_actor()["id"]
         workers = brain.snapshot()["company"].get("semantic_workers") or []
     except Exception:
-        return False
+        return True
     return actor not in workers
 
 
