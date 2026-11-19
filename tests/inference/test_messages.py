@@ -115,7 +115,7 @@ class MessageAdapterTests(unittest.TestCase):
         result["tasks"][0]["payment"] = {"object": supported(None), "tracking_record": supported(None)}
         parsed, runner, interpreter = self.interpret(result)
         self.assertEqual(parsed, result)
-        self.assertEqual(interpreter.last_metadata["prompt_version"], "company-work-evidence-12")
+        self.assertEqual(interpreter.last_metadata["prompt_version"], "company-work-evidence-13")
         payload = json.loads(runner.calls[-1][1]["input"])
         self.assertEqual(payload["job"]["candidate_task_versions"], self.job["candidate_task_versions"])
         self.assertEqual(payload["job"]["task_ids"], [])

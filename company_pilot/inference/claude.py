@@ -11,7 +11,7 @@ import threading
 
 from .schema import schema_for_job, validate_analysis
 
-PROMPT_VERSION = "company-work-evidence-12"
+PROMPT_VERSION = "company-work-evidence-13"
 SCHEMA_VERSION = 1
 ISOLATION_FLAGS = (
     "--safe-mode", "--restricted", "--strict-mcp-config",
@@ -38,11 +38,12 @@ Todo campo obrigatório permanece presente; fatos desconhecidos ficam com value
 null e evidence vazio. Nunca invente uma chave de lacuna: as chaves de fields são
 fixas. Não decida status estabelecido/provisório, conflitos ou lacunas; o Brain
 calcula esses resultados. 'Não se aplica', se explicitamente relatado, é válido.
-Contexto se acumula: o padrão de context_updates é mode add; omitir um fato nunca
-o substitui ou apaga. mode replace exige intenção explícita citada e os IDs das
-afirmações ativas fornecidas em context_claims no campo replaces. mode conflict
-preserva alternativas apoiadas, sem escolher uma por conveniência. Uma correção
-explícita da entrevista continua restrita ao tópico selecionado.
+Contexto se acumula: o padrão de context_updates é mode add; se mode vier ausente,
+o significado é add, e omitir um fato nunca o substitui ou apaga. mode replace exige
+intenção explícita citada e os IDs das afirmações ativas fornecidas em context_claims
+no campo replaces. mode conflict preserva alternativas apoiadas, sem escolher uma
+por conveniência. Uma correção explícita da entrevista continua restrita ao tópico
+selecionado.
 recognition_markers contém somente nomes literais curtos de registros, referências
 de negócio, nomes da empresa ou contas empresariais presentes em fonte fornecida.
 Nunca use apenas um aplicativo, prosa descritiva inteira ou uma inferência como

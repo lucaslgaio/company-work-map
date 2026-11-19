@@ -110,6 +110,7 @@ ANALYSIS_SCHEMA["properties"]["recognition_markers"] = {
     }),
 }
 context_update = ANALYSIS_SCHEMA["properties"]["context_updates"]["items"]
+# mode stays optional. The brain treats a missing mode as add.
 context_update["properties"].update({
     "mode": {"type": "string", "enum": ["add", "replace", "conflict"]},
     "replaces": {"type": "array", "items": {"type": "string"}},

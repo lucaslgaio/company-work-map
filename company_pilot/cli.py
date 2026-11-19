@@ -296,6 +296,12 @@ def _processing_health(value):
             from .brain.quotes import MANUAL_INTERVIEW_MESSAGE
             result["recommended_route"] = "manual"
             result["summary"] = result["summary"] + " " + MANUAL_INTERVIEW_MESSAGE
+        if value.get("recognition_names_confirmed") is False:
+            from .brain.knowledge import RECOGNITION_HEALTH_MESSAGE
+            result["recognition_names_confirmed"] = False
+            result["summary"] = result["summary"] + " " + RECOGNITION_HEALTH_MESSAGE
+        elif value.get("recognition_names_confirmed") is True:
+            result["recognition_names_confirmed"] = True
         return result
     except (ValueError, TypeError, KeyError):
         return {"state": "not_verified"}
@@ -400,6 +406,10 @@ def parser():
     prep.add_argument("--code-commit", required=True)
     prep.add_argument("--output-dir", type=Path, required=True)
     setup_actions.add_parser("status", help="Mostrar análise, acesso e pendências atuais.")
+    confirm = setup_actions.add_parser("confirm-names", help="Confirmar nomes literais já citados, para reconhecer janelas. Não confirma nada que não for passado.")
+    confirm.add_argument("--name", action="append", required=True, help="Nome exato já presente numa fonte. Repita o par com --kind.")
+    confirm.add_argument("--kind", action="append", required=True, choices=("record_name", "record_ref", "company_alias", "business_account"))
+    confirm.add_argument("--event-id", help="UUID estável para repetir a mesma confirmação.")
     member = setup_actions.add_parser("participant", help="Gerar nota privada para um participante confirmado; não enviar convite.")
     member.add_argument("--name", required=True)
     member.add_argument("--github-login")
@@ -435,6 +445,11 @@ def parser():
     init.add_argument("--mirror", type=Path, help="Pasta de mirror retido para verificar o histórico remoto.")
     init.add_argument("--screenshots-file", type=Path, help="JSON com founder e team, cada qual true ou false; padrão: ambos false.")
     commands.add_parser("status", help="Mostrar contagens e disponibilidade, sem conteúdo capturado.")
+    repair = commands.add_parser("repair", help="Reparos auditáveis do cérebro, sem reescrever o histórico.")
+    repair_actions = repair.add_subparsers(dest="action", required=True, parser_class=Parser)
+    conflicts = repair_actions.add_parser("context-conflicts", help="Resolver conflitos de contexto criados sem mode conflict ou por correção fora de ordem.")
+    conflicts.add_argument("--dry-run", action="store_true", help="Mostrar o que seria resolvido, sem gravar.")
+    conflicts.add_argument("--event-id", help="UUID estável da aplicação. Ignorado no dry-run.")
     snapshot = commands.add_parser("snapshot", help="Ler os registros completos; contém informação privada da empresa.")
     snapshot.add_argument("--output-file", type=Path, help="Gravar o snapshot em arquivo privado em vez de imprimir.")
     commands.add_parser("pending", help="Listar metadados dos trabalhos de interpretação pendentes.")
@@ -562,6 +577,15 @@ def _safe_error(error):
         "company_human_access_not_verified": (
             "ACESSO_NAO_CONFIRMADO", "O acesso humano aos registros da empresa ainda não está verificado.",
             "Confira policy show e o pedido do fundador. O proprietário deve concluir owner verify-access contra o pedido atual; não amplie o acesso para forçar a sincronização."),
+        "marker_name_must_be_literal_in_source": (
+            "DADOS_NAO_ACEITOS", "Esse nome não aparece como frase inteira numa fonte já guardada.",
+            "Use o nome exatamente como a entrevista ou o registro o citou. Não confirme um nome que ainda não está numa fonte."),
+        "app_only_or_generic_marker_not_authorized": (
+            "DADOS_NAO_ACEITOS", "Esse nome é genérico demais para reconhecer janelas.",
+            "Confirme um nome específico de registro, projeto ou empresa, não o aplicativo sozinho."),
+        "invalid_grounded_marker": (
+            "DADOS_NAO_ACEITOS", "O nome ou o tipo não pode ser confirmado.",
+            "Repita --name e --kind em pares. O tipo é record_name, record_ref, company_alias ou business_account."),
     }
     reason = error.args[0] if len(error.args) == 1 and type(error.args[0]) is str else None
     if name in ("BrainError", "AccessDenied") and reason in reasons:
@@ -655,6 +679,11 @@ def main(argv=None, *, brain_factory=None, interpreter_factory=None, nora_factor
                                  args.software_repository, args.code_commit)
             elif args.action == "status":
                 result = setup_status(brain, _health(health_file))
+            elif args.action == "confirm-names":
+                if len(args.name) != len(args.kind) or len(args.name) > 20:
+                    raise CliError("ARGUMENTOS_INVALIDOS", "Cada nome precisa de um tipo, na mesma ordem.", "Repita --name e --kind em pares: record_name, record_ref, company_alias ou business_account.")
+                items = [{"value": name, "kind": kind} for name, kind in zip(args.name, args.kind)]
+                result = operation(config_path, "confirm-names", items, lambda event: brain.confirm_recognition_names(items, event), args.event_id)
             elif args.action == "sources":
                 from .setup import write_source_config
                 result = write_source_config(args.output, config_path, args.catalog, args.archive_root, args.source_root, brain.snapshot()["company"]["id"])
@@ -686,6 +715,16 @@ def main(argv=None, *, brain_factory=None, interpreter_factory=None, nora_factor
         if args.command == "owner":
             result = (verify_access(brain, config, args.event_id, config_path=config_path) if args.action == "verify-access" else
                       enroll_founder(brain, config, args.github_login, args.request_reference, args.event_id or str(uuid4())))
+            _emit(result, out)
+            return 0
+        if args.command == "repair":
+            if args.dry_run:
+                result = brain.repair_context_conflicts(dry_run=True)
+            else:
+                def fingerprint():
+                    return [item["key"] for item in brain.repair_context_conflicts(dry_run=True)["repairable"]]
+                result = operation(config_path, "repair-context-conflicts", ["context-conflicts"],
+                                   lambda event: brain.repair_context_conflicts(event), args.event_id, state_reader=fingerprint)
             _emit(result, out)
             return 0
         if args.command == "status":

@@ -1,5 +1,6 @@
 """Source-backed current claims, recognition names and payment connections."""
 import copy
+import json
 import re
 import unicodedata
 
@@ -35,6 +36,198 @@ def marker_readback(context, markers):
             active.append({"id": key, "value": value, "kind": "record_name", "evidence": copy.deepcopy(claim["evidence"]), "status": "active", "origin": "legacy_literal_claim"})
             explicit.add(value.casefold())
     return active
+
+
+NODE_MARKER_KINDS = {
+    "project": "record_name",
+    "work_object": "record_name",
+    "tracking_record": "record_name",
+    "organization": "company_alias",
+}
+MARKER_KINDS = ("record_name", "record_ref", "company_alias", "business_account")
+RECOGNITION_HEALTH_MESSAGE = (
+    "Nenhum nome de reconhecimento foi confirmado; capturas sem esse nome ficam incertas. "
+    "Consulte setup status ou interview next e confirme só os nomes aceitos pelo fundador com setup confirm-names."
+)
+RECOGNITION_COMMAND = 'python3 -m company_pilot --config CONFIG setup confirm-names --name "NOME" --kind TIPO'
+_SKIP_GROUNDING_KINDS = {"analysis", "answer_assignment"}
+
+
+def recognition_is_confirmed(snapshot):
+    return any(marker.get("status") == "active" for marker in marker_readback(
+        snapshot.get("context") or {}, snapshot.get("recognition_markers") or []))
+
+
+def grounded_name(sources, name):
+    """Return (source, original slice) when name is a whole phrase in a real source."""
+    from .quotes import locate_source_span
+    term = name.strip()
+    if not _acceptable_marker_name(term):
+        return None
+    for source in sources:
+        if not isinstance(source, dict) or source.get("kind") in _SKIP_GROUNDING_KINDS:
+            continue
+        text = source.get("text")
+        if not isinstance(text, str):
+            continue
+        span = locate_source_span(text, term)
+        if span and _marker_in_quote(term, span):
+            return source, span
+    return None
+
+
+def _acceptable_marker_name(term):
+    if not isinstance(term, str) or not 3 <= len(term.strip()) <= 200:
+        return False
+    generic = _marker_generic_key(term)
+    return bool(generic) and generic not in {_marker_generic_key(marker) for marker in GENERIC_MARKERS}
+
+
+def recognition_candidates(snapshot):
+    sources = snapshot.get("sources") or []
+    confirmed = {_marker_text(marker["value"]) for marker in marker_readback(
+        snapshot.get("context") or {}, snapshot.get("recognition_markers") or [])}
+    found = []
+    seen = set(confirmed)
+    nodes = snapshot.get("nodes") or []
+    for node in nodes:
+        if not isinstance(node, dict) or node.get("superseded_by"):
+            continue
+        kind = NODE_MARKER_KINDS.get(node.get("kind"))
+        name = node.get("name")
+        if not kind or not isinstance(name, str):
+            continue
+        key = _marker_text(name)
+        if key in seen or grounded_name(sources, name) is None:
+            continue
+        seen.add(key)
+        found.append({"name": name.strip(), "kind": kind, "from": node["kind"]})
+    company = (snapshot.get("company") or {}).get("name")
+    if isinstance(company, str) and _marker_text(company) not in seen and grounded_name(sources, company):
+        found.append({"name": company.strip(), "kind": "company_alias", "from": "company"})
+    found.sort(key=lambda item: (item["kind"], _marker_text(item["name"])))
+    return found[:30]
+
+
+def recognition_gap(snapshot):
+    """Notice for the founder when capture still has no confirmed name. None once one exists."""
+    if recognition_is_confirmed(snapshot):
+        return None
+    return {
+        "confirmed_count": 0,
+        "capture_effect": "uncertain_until_names_confirmed",
+        "message": (
+            "Nenhum nome de reconhecimento foi confirmado. Capturas sem um nome confirmado ficam incertas e não entram no mapa. "
+            "O comando não confirma nomes sozinho: passe só os que o fundador aceitar, já citados numa fonte."
+        ),
+        "command": RECOGNITION_COMMAND,
+        "kinds": list(MARKER_KINDS),
+        "candidates": recognition_candidates(snapshot),
+    }
+
+
+def _claim_source_ids(claim):
+    refs = claim.get("evidence") if isinstance(claim, dict) else None
+    if not isinstance(refs, list):
+        return []
+    return sorted({ref.get("source_id") for ref in refs if isinstance(ref, dict) and isinstance(ref.get("source_id"), str)})
+
+
+def _stored_claim(claim):
+    return isinstance(claim, dict) and isinstance(claim.get("value"), str) and bool(claim["value"].strip()) and isinstance(claim.get("evidence"), list) and bool(claim["evidence"])
+
+
+def conflict_key(conflict):
+    return digest(canonical({
+        "topic": conflict.get("topic"),
+        "source_id": conflict.get("source_id"),
+        "previous": (conflict.get("previous") or {}).get("value") if isinstance(conflict.get("previous"), dict) else None,
+        "candidate": (conflict.get("reported_candidate") or {}).get("value") if isinstance(conflict.get("reported_candidate"), dict) else None,
+    }))[:16]
+
+
+def _analysis_mode_for_conflict(state, conflict):
+    topic = conflict.get("topic")
+    candidate = conflict.get("reported_candidate") or {}
+    value = candidate.get("value") if isinstance(candidate, dict) else None
+    saw_missing = False
+    saw_match = False
+    sources = state.sources.values() if isinstance(state.sources, dict) else state.sources
+    for source in sources:
+        if source.get("kind") != "analysis" or conflict.get("source_id") not in (source.get("input_source_ids") or []):
+            continue
+        try:
+            payload = json.loads(source.get("text") or "")
+        except (ValueError, TypeError):
+            continue
+        for update in payload.get("context_updates") or []:
+            if not isinstance(update, dict) or update.get("topic") != topic or update.get("value") != value:
+                continue
+            saw_match = True
+            if update.get("mode") == "conflict":
+                return "conflict"
+            if "mode" not in update or update.get("mode") in (None, ""):
+                saw_missing = True
+    if saw_missing:
+        return "missing"
+    return "other" if saw_match else "absent"
+
+
+def context_conflict_disposition(state, conflict):
+    """Classify a pending context conflict. Uncertain cases stay untouched."""
+    if conflict.get("status") != "pending":
+        return None
+    origin = conflict.get("origin")
+    if origin == "explicit_mode":
+        return ("skip", "explicit_conflict")
+    if origin in ("stale_answer", "correction_changed"):
+        return ("skip", origin)
+    if origin in ("missing_mode", "empty_previous_context"):
+        return ("repair", origin)
+    source = state.sources.get(conflict.get("source_id")) if isinstance(state.sources, dict) else None
+    if not isinstance(source, dict):
+        return ("skip", "unclassified")
+    previous = conflict.get("previous")
+    candidate = conflict.get("reported_candidate")
+    if not _stored_claim(previous) or not _stored_claim(candidate):
+        return ("skip", "unclassified")
+    if any(ref.get("source_id") not in state.sources for ref in previous["evidence"] + candidate["evidence"] if isinstance(ref, dict)):
+        return ("skip", "unclassified")
+    if source.get("kind") == "interview_correction":
+        queued = source.get("previous_context")
+        if not isinstance(queued, dict) or not queued.get("value"):
+            return ("repair", "empty_previous_context")
+        return ("skip", "correction_changed")
+    if source.get("kind") != "interview" or source.get("context_questions"):
+        return ("skip", "stale_answer" if source.get("context_questions") or source.get("kind") == "answer" else "unclassified")
+    mode = _analysis_mode_for_conflict(state, conflict)
+    if mode == "conflict":
+        return ("skip", "explicit_conflict")
+    if mode == "missing":
+        return ("repair", "missing_mode")
+    return ("skip", "unclassified")
+
+
+def plan_context_conflict_repairs(state):
+    repairable, skipped = [], []
+    for conflict in state.interview.get("context_conflicts", []):
+        disposition = context_conflict_disposition(state, conflict)
+        if disposition is None:
+            continue
+        action, reason = disposition
+        item = {
+            "key": conflict_key(conflict),
+            "topic": conflict.get("topic"),
+            "reason": reason,
+            "question_id": conflict.get("question_id"),
+            "source_id": conflict.get("source_id"),
+            "previous_value": (conflict.get("previous") or {}).get("value") if isinstance(conflict.get("previous"), dict) else None,
+            "candidate_value": (conflict.get("reported_candidate") or {}).get("value") if isinstance(conflict.get("reported_candidate"), dict) else None,
+            "previous_source_ids": _claim_source_ids(conflict.get("previous")),
+            "candidate_source_ids": _claim_source_ids(conflict.get("reported_candidate")),
+        }
+        (repairable if action == "repair" else skipped).append(item)
+    return {"repairable": repairable, "skipped": skipped}
 
 
 def seed_claims(context, existing):
@@ -84,7 +277,7 @@ def apply_context(brain, state, topic, claim, source, mode="add", replaces=(), e
         raise BrainError("replacement_ids_require_replace_mode")
     previous = copy.deepcopy(state.context.get(topic))
     if mode == "conflict" and previous and previous["value"] != claim["value"]:
-        brain._context_conflict(state, topic, previous, claim, source["id"])
+        brain._context_conflict(state, topic, previous, claim, source["id"], origin="explicit_mode")
         state.company["context_version"] += 1
         return previous
     cid = identifier(topic, digest(canonical(claim)))

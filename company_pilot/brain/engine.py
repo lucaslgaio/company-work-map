@@ -13,7 +13,9 @@ from .stores import AccessDenied, BINARY_PREFIX, BrainError, ConcurrentWrite, In
 from .policy import PolicyMixin, controls_for, screenshots_for
 from .messages import MessageMixin
 from .records import RecordMixin
-from .knowledge import seed_claims, apply_context, apply_markers, payment_claims, refresh_payment, payment_gaps, marker_readback
+from .knowledge import (seed_claims, apply_context, apply_markers, payment_claims, refresh_payment,
+                       payment_gaps, marker_readback, recognition_gap, plan_context_conflict_repairs,
+                       grounded_name, conflict_key, MARKER_KINDS, GENERIC_MARKERS, _marker_text, _marker_generic_key)
 from .quotes import awaiting_manual_interview, locate_source_span, manual_interview_route, quote_not_found
 
 FIELDS = ("trigger", "performer", "input", "action", "result", "purpose", "placement", "handoff", "tracking_record")
@@ -327,13 +329,16 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                               "status": "pending", "created_at": now(), "attempts": 0, "error_code": None}
         return job_id
 
-    def _context_conflict(self, state, topic, previous, candidate, source_id):
+    def _context_conflict(self, state, topic, previous, candidate, source_id, origin=None):
         field = {"activities": "purpose", "people": "performer", "stages": "placement", "tracking": "tracking_record", "documents": "input"}[topic]
         qid = identifier(state.company["id"], "context-conflict:" + topic)
         old_question = state.questions.get(qid)
         sources = sorted({ref["source_id"] for claim in (previous, candidate) for ref in claim["evidence"]})
-        state.interview.setdefault("context_conflicts", []).append({"topic": topic, "previous": previous,
-            "reported_candidate": candidate, "question_id": qid, "status": "pending", "source_id": source_id})
+        record = {"topic": topic, "previous": previous, "reported_candidate": candidate, "question_id": qid,
+                  "status": "pending", "source_id": source_id}
+        if origin:
+            record["origin"] = origin
+        state.interview.setdefault("context_conflicts", []).append(record)
         state.put("questions", {"id": qid, "company_id": state.company["id"], "task_id": state.company["id"],
             "target_kind": "context_conflict", "context_topic": topic, "base_version": state.company["context_version"],
             "task_version": state.company["context_version"], "missing_links": [field], "missing_fields": [field],
@@ -704,6 +709,9 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         progress = {"deferred_topics": sorted(deferred), "pending_context_question_ids": context_questions,
                     "awaiting_person_question_ids": awaiting_questions,
                     "business_context_status": "pending_clarification" if context_questions else "awaiting_person" if awaiting_questions else "collecting" if missing else "known_topics_recorded"}
+        gap = recognition_gap(snapshot)
+        if gap:
+            progress["recognition"] = gap
         sources = {source["id"]: source for source in snapshot["sources"]}
         jobs = [job for job in snapshot["pending_jobs"] if job["kind"] == "interview" and job["status"] == "pending"
                 and sources[job["source_ids"][0]].get("question", {}).get("topic") not in job.get("excluded_context_topics", [])]
@@ -723,6 +731,108 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
             return {**progress, "state": "question", **followup, "question": followup["text"]}
         prompts = {"activities": "O que a empresa faz e qual trabalho precisa acontecer para entregar ao cliente?", "people": "Quem participa desse trabalho e quais responsabilidades cada pessoa assume?", "stages": "Como esse trabalho avança e como vocês sabem que cada etapa terminou?", "tracking": "Onde vocês acompanham andamento e, quando houver, pagamentos e saldos?", "documents": "Quais documentos ou registros existentes ajudam a entender esse trabalho?"}
         return {**progress, "state": "question", "topic": missing[0], "question": prompts[missing[0]], "text": prompts[missing[0]]}
+
+    def repair_context_conflicts(self, event_id=None, *, dry_run=False):
+        """Turn false context conflicts into active claims. Explicit conflicts stay pending.
+
+        Dry-run only reads. An apply appends a ledger event and does not rewrite older ones.
+        """
+        if dry_run:
+            current, actor = self._read_with_actor()
+            state = _State(current)
+            self._founder(state, actor)
+            plan = plan_context_conflict_repairs(state)
+            return {"state": "dry_run", "dry_run": True, "repairable": plan["repairable"], "skipped": plan["skipped"]}
+        if not event_id:
+            raise BrainError("uuid_required")
+
+        def apply(state, actor):
+            self._founder(state, actor)
+            plan = plan_context_conflict_repairs(state)
+            if not plan["repairable"]:
+                return {"state": "nothing_to_repair", "dry_run": False, "repaired": [], "skipped": plan["skipped"]}
+            topics = ", ".join(sorted({item["topic"] for item in plan["repairable"]}))
+            repair = self._source(state, actor, identifier(event_id, "context-repair"), "context_repair",
+                "Reparo 0.1.2: conflitos de contexto sem mode conflict, ou correções enfileiradas com o assunto ainda vazio, passam a valer os dois lados com as fontes originais. Assuntos: " + topics + ".",
+                speaker=actor["id"])
+            wanted = {item["key"]: item for item in plan["repairable"]}
+            repaired = []
+            questions = set()
+            for conflict in state.interview.get("context_conflicts", []):
+                item = wanted.get(conflict_key(conflict))
+                if item is None or conflict.get("status") != "pending":
+                    continue
+                added = 0
+                for claim in (conflict["previous"], conflict["reported_candidate"]):
+                    if self._ensure_context_claim(state, conflict["topic"], claim):
+                        added += 1
+                conflict.update(status="resolved", resolved_by=repair["id"], resolution="repair_" + item["reason"],
+                                selected=copy.deepcopy(conflict["reported_candidate"]))
+                questions.add(conflict["question_id"])
+                repaired.append({**item, "claims_added": added})
+            for qid in questions:
+                if any(item.get("question_id") == qid and item.get("status") == "pending" for item in state.interview.get("context_conflicts", [])):
+                    continue
+                question = state.questions.get(qid)
+                if question and question.get("status") != "resolved":
+                    state.put("questions", {**question, "status": "resolved", "resolved_by": repair["id"]})
+            state.company["context_version"] += 1
+            return {"state": "repaired", "dry_run": False, "source_id": repair["id"], "repaired": repaired, "skipped": plan["skipped"]}
+
+        return self._transaction("repair_context_conflicts", event_id, {"dry_run": False}, apply)
+
+    def _ensure_context_claim(self, state, topic, claim):
+        active = [record for record in state.context_claims if record["topic"] == topic and record["status"] == "active"]
+        if any(record["claim"].get("value") == claim["value"] for record in active):
+            return False
+        projected = state.context.get(topic)
+        if projected and projected.get("value") == claim["value"]:
+            return False
+        evidence_source = None
+        for ref in claim.get("evidence") or []:
+            evidence_source = state.sources.get(ref.get("source_id"))
+            if evidence_source:
+                break
+        if evidence_source is None:
+            return False
+        apply_context(self, state, topic, copy.deepcopy(claim), evidence_source, "add")
+        return True
+
+    def confirm_recognition_names(self, items, event_id):
+        """Confirm literal names the founder chose. Does not scan or confirm on its own."""
+        if not isinstance(items, list) or not 1 <= len(items) <= 20:
+            raise BrainError("bounded_recognition_markers_required")
+
+        def apply(state, actor):
+            self._founder(state, actor)
+            prepared = []
+            allowed = set()
+            sources = list(state.sources.values())
+            for item in items:
+                if not isinstance(item, dict) or set(item) != {"value", "kind"} or item["kind"] not in MARKER_KINDS or not isinstance(item["value"], str):
+                    raise BrainError("invalid_grounded_marker")
+                name = item["value"].strip()
+                generic = _marker_generic_key(name)
+                if not generic or not 3 <= len(name) <= 200:
+                    raise BrainError("invalid_grounded_marker")
+                if generic in {_marker_generic_key(marker) for marker in GENERIC_MARKERS}:
+                    raise BrainError("app_only_or_generic_marker_not_authorized")
+                found = grounded_name(sources, name)
+                if found is None:
+                    raise BrainError("marker_name_must_be_literal_in_source")
+                source, quote = found
+                if any(marker["status"] == "active" and marker["kind"] == item["kind"] and _marker_text(marker["value"]) == _marker_text(name) for marker in state.recognition_markers):
+                    continue
+                allowed.add(source["id"])
+                prepared.append({"value": name, "kind": item["kind"], "evidence": [{"source_id": source["id"], "quote": quote}], "operation": "add"})
+            if not prepared:
+                return {"state": "already_confirmed", "names": [item["value"].strip() for item in items]}
+            confirmation = self._source(state, actor, identifier(event_id, "confirm-names"), "recognition_confirmation",
+                "O fundador confirmou nomes para reconhecer janelas de trabalho.", speaker=actor["id"], names=[item["value"] for item in prepared])
+            apply_markers(self, state, prepared, confirmation, allowed)
+            return {"state": "confirmed", "names": [item["value"] for item in prepared], "source_id": confirmation["id"]}
+
+        return self._transaction("confirm_recognition_names", event_id, {"items": items}, apply)
 
     def interview_answer(self, text, event_id):
         state = _State(self.store.read())
@@ -1057,11 +1167,17 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                 if len({claim["value"] for claim in supported}) == 1:
                     selected = supported[0]
                     previous = state.context.get(topic)
-                    if previous != source["previous_context"] and previous and previous["value"] != selected["value"]:
-                        self._context_conflict(state, topic, previous, selected, source["id"])
+                    queued = source.get("previous_context")
+                    # A correction captured while the topic was empty is another fact.
+                    # One captured against a summary that later changed stays a conflict.
+                    queued_empty = not isinstance(queued, dict) or not queued.get("value")
+                    if not queued_empty and previous != queued and previous and previous["value"] != selected["value"]:
+                        self._context_conflict(state, topic, previous, selected, source["id"], origin="correction_changed")
                     else:
                         siblings = [record for record in state.context_claims if record["topic"] == topic and record["status"] == "active"]
-                        self._set_interview_context(state, topic, selected, source, keep_siblings=len(siblings) > 1)
+                        alongside = queued_empty and bool(siblings)
+                        self._set_interview_context(state, topic, selected, source,
+                            keep_siblings=len(siblings) > 1 or alongside, resolve_conflicts=not alongside)
                         correction_applied = True
                 else:
                     state.company["context_version"] += 1
@@ -1091,7 +1207,7 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                         stale = stale or (topic in question_bases and current_questions != question_bases[topic])
                         if targeted and stale:
                             if previous and previous["value"] != claim["value"]:
-                                self._context_conflict(state, topic, previous, claim, source["id"])
+                                self._context_conflict(state, topic, previous, claim, source["id"], origin="stale_answer")
                                 state.company["context_version"] += 1
                             # Matching an old value does not resolve a newer doubt.
                             # Attribution of the old source is not fresh evidence.
@@ -1127,11 +1243,10 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                     if update.get("mode"):
                         apply_context(self, state, topic, claim, source, update["mode"], update.get("replaces", []))
                         continue
+                    # A missing mode is add: complementary facts keep their sources.
                     previous = state.context.get(topic)
-                    if previous and previous["value"] != claim["value"]:
-                        self._context_conflict(state, topic, previous, claim, source["id"])
-                        state.company["context_version"] += 1
-                    elif state.interview.get("deferred_topics", {}).get(topic, {}).get("status") == "pending":
+                    deferred = state.interview.get("deferred_topics", {}).get(topic, {})
+                    if deferred.get("status") == "pending" and (not previous or previous.get("value") == claim["value"]):
                         self._set_interview_context(state, topic, claim, source)
                     else:
                         apply_context(self, state, topic, claim, source, "add")

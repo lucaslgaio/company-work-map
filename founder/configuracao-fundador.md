@@ -85,6 +85,14 @@ Pergunte separadamente se a empresa permite imagens do trabalho no computador do
 
 No computador do fundador, execute `setup device --installation-receipt INSTALLATION_JSON`, usando o recibo do instalador. Depois confira com a própria pessoa os padrões locais `cartão pessoal`, `conta pessoal`, `e-mail pessoal`, `conteúdo pessoal`, `uso pessoal` e `perfil pessoal`, além de exclusões específicas que ela escolher. Uma conta pessoal pode usar o mesmo banco/navegador da empresa; não exclua o aplicativo inteiro por suposição. Reconhecimento imperfeito continua uma limitação.
 
+Se `setup status`, `interview next` ou `operator health` disser que nenhum nome de reconhecimento foi confirmado, as capturas ficam incertas. Os nomes que a entrevista já citou aparecem como candidatos, ainda sem efeito. Confirme só os que o fundador aceitar, com o tipo correspondente (`record_name` para projeto ou registro, `company_alias` para o nome da empresa, `record_ref` ou `business_account` quando for o caso):
+
+```text
+PYTHON -m company_pilot --config COMPANY_CONFIG setup confirm-names --name "NOME" --kind record_name
+```
+
+O comando não escolhe nomes sozinho. Uma janela sem um nome confirmado, ou marcada como pessoal, continua de fora.
+
 Após a decisão pessoal, o assistente usa `setup consent --participate yes|no --screenshots yes|no --reviewed-defaults`, acrescentando `--personal-exclusion TERMO` apenas para termos escolhidos neste computador. O comando gera os arquivos e o recibo; os termos pessoais ficam locais. Recusa mantém captura bloqueada. Política nova exige nova conferência da pessoa, sem reaplicar um aceite antigo para contornar o bloqueio.
 
 Siga então o diagnóstico e o registro do agente na etapa 3 do roteiro da equipe. Uma sessão interativa não comprova permissões em segundo plano.
