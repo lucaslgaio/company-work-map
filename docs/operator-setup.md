@@ -67,7 +67,7 @@ Se houver registros empresariais existentes, siga [fontes-empresa.md](../founder
 
 A Nora fala num grupo de WhatsApp. O nome do grupo e quem pode responder entram na rota, durante a configuração, e não ficam gravados no código. O fundador escolhe o nome do grupo e preenche quem responde. Este repositório não traz nome de pessoa nem número. O operador, que é o `founder_sender` da rota, não responde: com as pessoas da rota configuradas, uma mensagem vinda dele é recusada. Se duas pessoas derem respostas diferentes, a mensagem seguinte cita as duas e faz uma pergunta só.
 
-A entrevista não depende de um programa chamado `claude`. O assistente do fundador segue [assistente.md](assistente.md): `operator prompt`, depois `operator apply --file`. Se não houver assistente, `operator commit-literal` guarda a frase como foi escrita. A chave `operator.claude_executable` é opcional e só serve para quem já tem esse programa configurado.
+A entrevista não depende de um programa chamado `claude`. O assistente do fundador segue [assistente.md](assistente.md): `operator prompt`, depois `operator apply --file`. Se não houver assistente, `operator commit-literal` guarda a frase como foi escrita. Se a mesma entrevista for recusada várias vezes (`analysis_rejected`), `status`, `operator health` e `interview next` pedem esse caminho manual em vez de outra tentativa igual. A chave `operator.claude_executable` é opcional e só serve para quem já tem esse programa configurado.
 
 Durante a entrevista, se quiser que a fila ande sozinha no computador autorizado:
 

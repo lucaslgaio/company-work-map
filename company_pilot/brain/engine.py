@@ -14,6 +14,7 @@ from .policy import PolicyMixin, controls_for, screenshots_for
 from .messages import MessageMixin
 from .records import RecordMixin
 from .knowledge import seed_claims, apply_context, apply_markers, payment_claims, refresh_payment, payment_gaps, marker_readback
+from .quotes import awaiting_manual_interview, locate_source_span, manual_interview_route, quote_not_found
 
 FIELDS = ("trigger", "performer", "input", "action", "result", "purpose", "placement", "handoff", "tracking_record")
 TOPICS = ("activities", "people", "stages", "tracking", "documents")
@@ -246,7 +247,8 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         state = _State(self.store.read())
         self._worker(state, self.store.authenticated_actor())
         current = now()
-        return [job for job in self.snapshot()["pending_jobs"] if job["status"] == "pending" and job.get("next_attempt_at", current) <= current]
+        return [job for job in self.snapshot()["pending_jobs"] if job["status"] == "pending"
+                and job.get("next_attempt_at", current) <= current and not awaiting_manual_interview(job)]
 
     def device_policy(self):
         snapshot = self.snapshot()
@@ -706,8 +708,14 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
         jobs = [job for job in snapshot["pending_jobs"] if job["kind"] == "interview" and job["status"] == "pending"
                 and sources[job["source_ids"][0]].get("question", {}).get("topic") not in job.get("excluded_context_topics", [])]
         if jobs:
-            return {**progress, "business_context_status": "pending_analysis", "state": "pending_analysis", "job_id": jobs[0]["id"], "question": None,
-                    "founder_message": "Sua resposta já está guardada. O assistente pode lê-la e registrar o entendimento, ou o texto fica como você escreveu se não houver assistente. Não é preciso o programa claude."}
+            route = manual_interview_route(jobs[:1])
+            message = route["message"] if route else (
+                "Sua resposta já está guardada. O assistente pode lê-la e registrar o entendimento, ou o texto fica como você escreveu se não houver assistente. Não é preciso o programa claude.")
+            pending = {**progress, "business_context_status": "pending_analysis", "state": "pending_analysis", "job_id": jobs[0]["id"], "question": None,
+                       "founder_message": message}
+            if route:
+                pending.update(recommended_route="manual", manual_commands=route["commands"], rejection_reason=route.get("rejection_reason"))
+            return pending
         if not missing:
             return {**progress, "state": "complete", "question": None}
         followup = snapshot["interview"].get("next_question")
@@ -739,14 +747,27 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
             raise BrainError("invalid_field_claim")
         if not isinstance(claim["evidence"], list):
             raise BrainError("invalid_claim_evidence")
+        spans = []
+        failures = []
         for ref in claim["evidence"]:
-            if set(ref) != {"source_id", "quote"} or ref["source_id"] not in allowed_sources or ref["source_id"] not in state.sources:
+            if not isinstance(ref, dict) or set(ref) != {"source_id", "quote"} or ref["source_id"] not in allowed_sources or ref["source_id"] not in state.sources:
                 raise BrainError("unavailable_or_out_of_scope_source")
             evidence = state.sources[ref["source_id"]]
-            if not ref["quote"] or ref["quote"] not in evidence["text"] or evidence["kind"] in ("analysis", "answer_assignment"):
-                raise BrainError("source_quote_not_found")
-            if claim["basis"] == "observed" and evidence["kind"] not in ("observation", "company_record"):
+            quote = ref.get("quote")
+            if evidence["kind"] in ("analysis", "answer_assignment") or not isinstance(quote, str):
+                failures.append({"source_id": ref["source_id"], "quote": quote if isinstance(quote, str) else "", "reason": "source_quote_not_found"})
+                spans.append(None)
+                continue
+            span = locate_source_span(evidence["text"], quote)
+            if not span:
+                failures.append({"source_id": ref["source_id"], "quote": quote, "reason": "source_quote_not_found"})
+            spans.append(span)
+            if span and not failures and claim["basis"] == "observed" and evidence["kind"] not in ("observation", "company_record"):
                 raise BrainError("observed_claim_requires_observation")
+        if failures:
+            raise quote_not_found(failures)
+        for ref, span in zip(claim["evidence"], spans):
+            ref["quote"] = span
         if claim["value"] and claim["basis"] != "inferred" and not claim["evidence"]:
             raise BrainError("supported_claim_requires_evidence")
         return copy.deepcopy(claim)
@@ -1008,6 +1029,24 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                     refreshed = self._refresh_task(state, current)
                     changed[-1].update(version=refreshed["version"], status=refreshed["status"])
             correction = source["kind"] == "interview_correction"
+            flexible = job["kind"] == "interview" and not correction
+            omitted_quotes = []
+            grounded_claims = []
+
+            def claim_for(payload):
+                if not flexible:
+                    return self._claim(state, payload, allowed)
+                try:
+                    value = self._claim(state, payload, allowed)
+                except BrainError as error:
+                    if str(error) != "source_quote_not_found":
+                        raise
+                    omitted_quotes.extend(getattr(error, "quote_failures", None) or [])
+                    return None
+                if value.get("evidence"):
+                    grounded_claims.append(value)
+                return value
+
             correction_applied = False
             if correction:
                 topic = source["context_topic"]
@@ -1033,7 +1072,9 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                     raise BrainError("unknown_context_topic")
                 if topic in job.get("excluded_context_topics", []):
                     continue
-                claim = self._claim(state, {key: update[key] for key in ("value", "basis", "evidence")}, allowed)
+                claim = claim_for({key: update[key] for key in ("value", "basis", "evidence")})
+                if claim is None:
+                    continue
                 if claim["value"] and claim["basis"] != "inferred":
                     context_questions = job.get("context_questions", source.get("context_questions", []))
                     if context_questions:
@@ -1097,11 +1138,24 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
             question_answers(self, state, result.get("question_answers", []), job, source, allowed, map_scope)
             from .semantics import apply_attention
             apply_attention(self, state, result.get("attention_requests", []), job, source, allowed)
-            apply_markers(self, state, result.get("recognition_markers", []), source, allowed)
+            markers = result.get("recognition_markers", [])
+            if flexible and isinstance(markers, list):
+                kept = []
+                for marker in markers:
+                    if not isinstance(marker, dict):
+                        kept.append(marker)
+                        continue
+                    probed = claim_for({"value": marker.get("value") if isinstance(marker.get("value"), str) else None,
+                                        "basis": "reported", "evidence": marker.get("evidence")})
+                    if probed is not None:
+                        kept.append(marker)
+                markers = kept
+            apply_markers(self, state, markers, source, allowed)
             for node in (() if correction and not correction_applied else result.get("nodes", [])):
                 if node["kind"] not in KINDS or node["kind"] == "task":
                     raise BrainError("invalid_graph_node_kind")
-                self._claim(state, {"value": node["name"], "basis": "reported", "evidence": node["evidence"]}, allowed)
+                if claim_for({"value": node["name"], "basis": "reported", "evidence": node["evidence"]}) is None:
+                    continue
                 nid = identifier(state.company["id"], node["kind"] + ":" + node["name"].casefold())
                 name, refs = node["name"], node["evidence"]
                 if node["kind"] == "person":
@@ -1113,6 +1167,8 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                     refs = list({canonical(ref): ref for ref in refs + identity["evidence"]}.values())
                 previous_node = state.groups["nodes"].get(nid)
                 state.put("nodes", {"id": nid, "kind": node["kind"], "name": previous_node["name"] if previous_node else name, "evidence": refs, "superseded_by": []})
+            if flexible and omitted_quotes and not grounded_claims:
+                raise quote_not_found(omitted_quotes)
             question = result.get("next_question")
             if question is not None:
                 if question.get("topic") not in TOPICS:
@@ -1141,17 +1197,25 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                 receipt["record_extraction"] = result["record_extraction"]
             if job.get("excluded_context_topics"):
                 receipt["deferred_topics"] = job["excluded_context_topics"]
+            if omitted_quotes:
+                from .quotes import bound_quote_failures
+                receipt["omitted_quotes"] = bound_quote_failures(omitted_quotes)
             job.update(status="awaiting_disambiguation" if waiting else "applied", receipt=receipt, error_code=None)
+            job.pop("quote_failures", None)
+            job.pop("rejection_reason", None)
+            job.pop("reason", None)
             self._source(state, actor, identifier(job_id, "model-result"), "analysis", canonical(result), input_source_ids=job["source_ids"], interpretation=metadata)
             return receipt
         return self._transaction("analysis", identifier(job_id, "apply"), payload, apply)
 
-    def mark_job_error(self, job_id, code, *, rejection_reason=None):
+    def mark_job_error(self, job_id, code, *, rejection_reason=None, quote_failures=None):
         from .diagnostics import REJECTIONS
+        from .quotes import bound_quote_failures
         if rejection_reason is not None and rejection_reason not in REJECTIONS:
             raise BrainError("closed_rejection_reason_required")
         if not isinstance(code, str) or len(code) > 80:
             raise BrainError("stable_error_code_required")
+        bounded_failures = bound_quote_failures(quote_failures) if quote_failures else None
         def apply(state, actor):
             self._worker(state, actor)
             job = state.jobs[job_id]
@@ -1164,6 +1228,8 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
                 else:
                     job.pop("rejection_reason", None)
                     job.pop("reason", None)
+                if bounded_failures:
+                    job["quote_failures"] = bounded_failures
             return {"job_id": job_id, "state": job["status"], "error_code": job["error_code"]}
         return self._transaction("analysis_error", str(uuid.uuid4()), {"job_id": job_id, "code": code, **({"rejection_reason": rejection_reason} if rejection_reason else {})}, apply)
 
