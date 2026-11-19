@@ -5,6 +5,7 @@ import json
 
 from .engine import FIELDS, LABELS, TOPICS
 from .knowledge import marker_readback
+from .quotes import MANUAL_INTERVIEW_MESSAGE, awaiting_manual_interview
 from .readout import questions_nora_would_ask, shown_person, shown_time
 
 KINDS_PT = {"organization": "empresa", "responsibility": "responsabilidade", "job": "trabalho", "process": "processo", "task": "tarefa", "person": "pessoa", "tracking_record": "registro de acompanhamento", "project": "projeto", "observation": "observação", "answer": "resposta", "interview": "conversa inicial", "analysis": "interpretação", "coverage_gap": "contexto ainda desconhecido", "correction": "correção"}
@@ -298,6 +299,8 @@ def render(state, store):
         queue += "Fila sem itens pendentes.\n"
     for job in jobs:
         reason = job.get("reason") or ("Falha no processamento; o operador tentará novamente" if job.get("error_code") else "aguardando operador")
+        if awaiting_manual_interview(job):
+            reason = reason + " " + MANUAL_INTERVIEW_MESSAGE
         status = "aguardando esclarecimento em uma pergunta agendada" if job["status"] in ("unassigned", "awaiting_disambiguation") else "aguardando processamento"
         queue += f"- {clean(KINDS_PT[job['kind']])}; recebido em {clean(shown_time(job.get('created_at')) or 'horário não registrado')}; tentativas {job['attempts']}; situação {status}; motivo {reason}.\n"
     files["views/fila.md"] = queue

@@ -61,11 +61,12 @@ class Round4RejectionTests(unittest.TestCase):
 
     def test_actual_wrong_quote_rejection_is_safe_and_visible_in_queue(self):
         raw, source = self.answer()
-        worker = SemanticWorker(self.brain, FixtureInterpreter(lambda source: self.marker(source, quote="Diário de obra")))
+        worker = SemanticWorker(self.brain, FixtureInterpreter(lambda source: self.marker(source, quote="planilha secreta do outro cliente")))
         response = worker.run_once()
         job = self.assert_pending_source_preserved(response, raw, source)
         self.assertEqual(response.get("rejection_reason"), "source_quote_not_found")
         self.assertEqual(job.get("rejection_reason"), "source_quote_not_found")
+        self.assertEqual(job["quote_failures"], [{"source_id": source["id"], "quote": "planilha secreta do outro cliente", "reason": "source_quote_not_found"}])
         safe = "Um trecho citado não foi encontrado na fonte preservada. A interpretação não foi aplicada."
         self.assertEqual(job.get("reason"), safe)
         self.assertIn(safe, self.brain.store.read().files["views/fila.md"])

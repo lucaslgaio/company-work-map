@@ -100,7 +100,7 @@ class Round4PublicGuards(unittest.TestCase):
             changes={"purpose": "Elaborar o relatório da semana"}, apply=False)
         cases = (({"mode": "equivalent", "effective_at": None, "evidence": refs(source)}, "complete_prior_field_evidence_required"),
                  ({"mode": "equivalent", "effective_at": None, "evidence": prior, "prior_evidence": prior}, "current_field_update_evidence_required"),
-                 ({"mode": "equivalent", "effective_at": None, "evidence": [{"source_id": source["id"], "quote": "ELABORAR O RELATÓRIO"}], "prior_evidence": prior}, "source_quote_not_found"))
+                 ({"mode": "equivalent", "effective_at": None, "evidence": [{"source_id": source["id"], "quote": "PUBLICAR O BALANÇO"}], "prior_evidence": prior}, "source_quote_not_found"))
         before = copy.deepcopy(self.task(tid))
         for update, reason in cases:
             with self.subTest(reason=reason):

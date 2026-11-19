@@ -12,4 +12,4 @@ A entrevista e as capturas podem ser lidas por você, o assistente que o fundado
 
 Rode `operator commit-literal`. A frase do fundador entra no assunto da entrevista como ele escreveu. O mapa não fica parado à espera de outro programa.
 
-`interview next` diz isso em português enquanto a resposta espera.
+`interview next` diz isso em português enquanto a resposta espera. Se a leitura automática da mesma entrevista for recusada várias vezes, `interview next`, `status` e `operator health` pedem este caminho (`operator prompt` e `operator apply`, ou `operator commit-literal`) em vez de repetir o mesmo pedido.

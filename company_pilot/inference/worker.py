@@ -184,15 +184,27 @@ class SemanticWorker:
         self.brain = brain
         self.interpreter = interpreter
 
-    def _pending(self, job_id, code, rejection_reason=None):
+    def _pending(self, job_id, code, rejection_reason=None, quote_failures=None):
+        extra = {}
+        if rejection_reason:
+            extra["rejection_reason"] = rejection_reason
+        if quote_failures:
+            extra["quote_failures"] = quote_failures
         try:
-            receipt = self.brain.mark_job_error(job_id, code, **({"rejection_reason": rejection_reason} if rejection_reason else {}))
+            receipt = self.brain.mark_job_error(job_id, code, **extra)
         except Exception:
             # A failed error receipt must never masquerade as an applied job.
             return {"status": "pending", "job_id": job_id,
                     "error_code": code, "error_recorded": False}
         return {"status": "pending", "job_id": job_id,
                 "error_code": code, "error_recorded": True, "receipt": receipt, **({"rejection_reason": rejection_reason} if rejection_reason else {})}
+
+    @staticmethod
+    def _rejection(error):
+        from ..brain.diagnostics import REJECTIONS
+        reason = str(error) if str(error) in REJECTIONS else None
+        failures = getattr(error, "quote_failures", None) if reason == "source_quote_not_found" else None
+        return reason, failures
 
     def _completion(self, job_id, receipt):
         if any(item.get("status") == "unresolved" for item in receipt.get("question_outcomes", [])):
@@ -206,9 +218,8 @@ class SemanticWorker:
         try:
             receipt = self.brain.apply_analysis(job_id, result)
         except Exception as error:
-            from ..brain.diagnostics import REJECTIONS
-            reason = str(error) if str(error) in REJECTIONS else None
-            return self._pending(job_id, "analysis_rejected", reason)
+            reason, failures = self._rejection(error)
+            return self._pending(job_id, "analysis_rejected", reason, failures)
         return self._completion(job_id, receipt)
 
     def run_once(self):
@@ -323,7 +334,6 @@ class SemanticWorker:
                 kwargs["map_scope"] = map_scope
             receipt = self.brain.apply_analysis(job_id, result, **kwargs)
         except Exception as error:
-            from ..brain.diagnostics import REJECTIONS
-            reason = str(error) if str(error) in REJECTIONS else None
-            return self._pending(job_id, "analysis_rejected", reason)
+            reason, failures = self._rejection(error)
+            return self._pending(job_id, "analysis_rejected", reason, failures)
         return self._completion(job_id, receipt)

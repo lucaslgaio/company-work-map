@@ -112,7 +112,7 @@ class Round4MarkerTests(unittest.TestCase):
     def test_forged_normalized_quote_and_unrelated_source_remain_rejected(self):
         raw, source = self.answer("O registro é diário de obra.")
         with self.assertRaisesRegex(BrainError, "source_quote_not_found"):
-            self.brain.apply_analysis(raw["job_id"], self.analysis(source, "Diário de obra", quote="Diário de obra"))
+            self.brain.apply_analysis(raw["job_id"], self.analysis(source, "Diário de obra", quote="Caderno de campo"))
         self.brain.apply_analysis(raw["job_id"], {"tasks": [], "nodes": [], "context_updates": [], "next_question": None})
         unrelated, other = self.answer("Outro registro é Empresa Alfa.")
         with self.assertRaisesRegex(BrainError, "unavailable_or_out_of_scope_source"):

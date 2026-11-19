@@ -11,7 +11,7 @@ import threading
 
 from .schema import schema_for_job, validate_analysis
 
-PROMPT_VERSION = "company-work-evidence-11"
+PROMPT_VERSION = "company-work-evidence-12"
 SCHEMA_VERSION = 1
 ISOLATION_FLAGS = (
     "--safe-mode", "--restricted", "--strict-mcp-config",
@@ -31,7 +31,9 @@ Uma observação da tela não prova autorização ou finalidade de negócio, e a
 que capturou a tela não é automaticamente quem executa ou autoriza a tarefa.
 Separe observado, relatado e inferido. Evidência exige source_id e citação literal
 exata de uma fonte fornecida e autorizada pelo job; não cite resumo gerado como
-se fosse fonte. Preserve valores anteriores sustentados quando revisar tarefas.
+se fosse fonte. Se o pedido trouxer quote_failures, a tentativa anterior foi
+recusada com source_quote_not_found: reescreva só essas citações como trechos
+contínuos da fonte, sem corrigir o texto, ou omita o fato que elas sustentariam. Preserve valores anteriores sustentados quando revisar tarefas.
 Todo campo obrigatório permanece presente; fatos desconhecidos ficam com value
 null e evidence vazio. Nunca invente uma chave de lacuna: as chaves de fields são
 fixas. Não decida status estabelecido/provisório, conflitos ou lacunas; o Brain
@@ -533,6 +535,19 @@ class ClaudeInterpreter:
             payload["job"].update({key: job[key] for key in (
                 "candidate_task_versions", "candidate_question_ids", "question_ids",
             )})
+        failures = job.get("quote_failures")
+        if (type(failures) is list and failures and all(
+                type(item) is dict and isinstance(item.get("quote"), str) and item.get("reason") == "source_quote_not_found"
+                for item in failures)):
+            payload["quote_failures"] = failures
+            payload["rejection_reason"] = "source_quote_not_found"
+            payload["request"] += (
+                " A tentativa anterior foi recusada (rejection_reason source_quote_not_found). "
+                "As citações em quote_failures não foram encontradas na fonte preservada. "
+                "Reescreva cada uma como um trecho contínuo copiado da fonte, sem corrigir "
+                "acentos, pontuação ou palavras, ou omita somente o fato sem esse trecho. "
+                "Não repita a citação que falhou."
+            )
         try:
             encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False)
         except (ValueError, TypeError):

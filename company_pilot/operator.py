@@ -63,6 +63,12 @@ def queue_status(snapshot, at=None):
     coverage = [{key: item[key] for key in ("source_id", "status", "reason") if key in item}
                 for item in snapshot.get("coverage", []) if item.get("status") == "coverage_only"]
     coverage.sort(key=lambda item: item.get("source_id", ""))
+    from .brain.quotes import MANUAL_INTERVIEW_MESSAGE, awaiting_manual_interview
+    summary = (f"{len(jobs)} registro(s) aguardam processamento ou esclarecimento; {len(answer_jobs)} são respostas já recebidas. "
+               "O assistente do fundador pode ler a resposta e registrar o entendimento; se ele não estiver disponível, o texto fica guardado como foi escrito. Não depende de um programa chamado claude.")
+    manual = any(awaiting_manual_interview(job) for job in jobs)
+    if manual:
+        summary = summary + " " + MANUAL_INTERVIEW_MESSAGE
     return {"pending_job_count": len(jobs), "queued_answer_count": len(answer_jobs),
             "coverage_constraint_count": len(coverage), "coverage_constraints": coverage[:20],
             "awaiting_clarification_count": sum(job.get("status") == "awaiting_disambiguation" for job in jobs),
@@ -70,7 +76,8 @@ def queue_status(snapshot, at=None):
             "oldest_queued_answer_at": answer_oldest, "oldest_queued_answer_age_seconds": age(answer_oldest),
             "last_analysis_at": max(analyses, default=None),
             "interpretation_availability": "requires_awake_online_operator",
-            "summary": f"{len(jobs)} registro(s) aguardam processamento ou esclarecimento; {len(answer_jobs)} são respostas já recebidas. O assistente do fundador pode ler a resposta e registrar o entendimento; se ele não estiver disponível, o texto fica guardado como foi escrito. Não depende de um programa chamado claude."}
+            **({"recommended_route": "manual"} if manual else {}),
+            "summary": summary}
 
 
 def project_questions(brain, nora, *, report=None):

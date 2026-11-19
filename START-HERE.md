@@ -6,11 +6,13 @@ Não conecte conta, não envie mensagem e não ligue a captura. A captura só co
 
 ## Versão
 
-No Git, `founder/pilot-release.json` traz `code_commit` igual a `HEAD`. Isso quer dizer: a versão é o commit desta pasta.
+No Git, `founder/pilot-release.json` traz `code_commit` igual a `HEAD`. Isso quer dizer: a versão é o commit desta pasta. O pacote Python desta pasta é `0.1.1`.
 
 ```text
 git rev-parse HEAD
 ```
+
+Se o piloto já está em uso, atualize o código nesta pasta e reinstale no mesmo Python, sem apagar a configuração nem o cérebro local. Na raiz do repositório: `git pull` e, em seguida, `python3 -m pip install -e .`. Quem roda sem instalar, só com `python3 -m company_pilot`, precisa apenas do `git pull`. A partir da `0.1.1`, uma citação da análise pode diferir um pouco da fonte (acento em NFC ou NFD, aspas, travessão, espaços, maiúsculas ou um erro curto de digitação) e o programa grava o trecho original; citação inventada continua recusada. Se `interview next` ou `status` pedir o caminho manual, use `operator prompt` e `operator apply`, ou `operator commit-literal`. Não conecte conta, não envie mensagem e não ligue captura neste passo.
 
 ## 1. Instalar
 

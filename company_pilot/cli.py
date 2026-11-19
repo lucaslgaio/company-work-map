@@ -292,6 +292,10 @@ def _processing_health(value):
             result[field] = max(0, int((current - datetime.fromisoformat(result[timestamp])).total_seconds())) if result[timestamp] else None
         result.update(interpretation_availability="requires_awake_online_operator",
                       summary=f"{result['pending_job_count']} registro(s) aguardam processamento ou esclarecimento; {result['queued_answer_count']} são respostas já recebidas. Confira a disponibilidade do Mac do operador.")
+        if value.get("recommended_route") == "manual":
+            from .brain.quotes import MANUAL_INTERVIEW_MESSAGE
+            result["recommended_route"] = "manual"
+            result["summary"] = result["summary"] + " " + MANUAL_INTERVIEW_MESSAGE
         return result
     except (ValueError, TypeError, KeyError):
         return {"state": "not_verified"}
@@ -685,12 +689,18 @@ def main(argv=None, *, brain_factory=None, interpreter_factory=None, nora_factor
             _emit(result, out)
             return 0
         if args.command == "status":
+            from . import __version__
+            from .brain.quotes import manual_interview_route
             snapshot = brain.snapshot()
-            _emit({"state": "ready", "synthetic": snapshot["company"]["synthetic"], "store": config["store"]["kind"],
-                   "task_count": len(snapshot.get("tasks", [])), "pending_job_count": len(snapshot.get("pending_jobs", [])),
-                   "pending_question_count": sum(q.get("status") in ("pending", "partially_answered") for q in snapshot.get("questions", [])),
-                   "operator": _health(health_file), "nora_enabled_in_config": config.get("nora", {}).get("enabled", False),
-                   "online_storage_is_not_operator_availability": True}, out)
+            report = {"state": "ready", "version": __version__, "synthetic": snapshot["company"]["synthetic"], "store": config["store"]["kind"],
+                      "task_count": len(snapshot.get("tasks", [])), "pending_job_count": len(snapshot.get("pending_jobs", [])),
+                      "pending_question_count": sum(q.get("status") in ("pending", "partially_answered") for q in snapshot.get("questions", [])),
+                      "operator": _health(health_file), "nora_enabled_in_config": config.get("nora", {}).get("enabled", False),
+                      "online_storage_is_not_operator_availability": True}
+            route = manual_interview_route(snapshot.get("pending_jobs", []))
+            if route:
+                report.update(recommended_route="manual", founder_message=route["message"], manual_commands=route["commands"])
+            _emit(report, out)
         elif args.command == "snapshot":
             result = brain.snapshot()
             if args.output_file:
