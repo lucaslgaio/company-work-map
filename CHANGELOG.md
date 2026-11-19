@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.1.4
+
+O Mac do fundador só separa janela pessoal de janela de trabalho. Pessoal continua só no computador (exclusões locais, lista embutida e redação de senha, como na `0.1.3`). Trabalho segue para o repositório da empresa, com o texto e a imagem quando a Gravação de Tela está autorizada. Este computador não chama modelo, não monta atividade e não fica repetindo uma assinatura de análise.
+
+A leitura que transforma captura e resposta de entrevista em atividade, cadeia, nota e pergunta é do operador externo. A conta dele entra em `setup external-analyst --login LOGIN`. Só essa conta grava análise. O fundador continua gravando captura e a própria resposta. O laço do operador, para um agente que roda comandos, está em `OPERATOR.md`:
+
+```text
+python3 -m company_pilot --config CONFIG operator pull
+python3 -m company_pilot --config CONFIG operator export --output JOBS
+python3 -m company_pilot --config CONFIG operator submit --job JOB_ID --file result.json
+```
+
+`export` grava um JSON por trabalho, com o texto, o caminho do anexo, o escopo, o schema e as instruções. `submit` aplica as mesmas conferências de citação e de escopo. Se recusar, a saída traz o motivo (`mensagem` e `rejection_reason`) para corrigir e enviar de novo. Captura sem trabalho (aba nova, Finder, Ajustes do Sistema, título vazio) aceita zero tarefas com `outcome` `no_work` e fica resolvida.
+
+Uma confirmação de nome (`setup confirm-names`) deixava a observação seguinte recusada como `analysis_rejected` sem motivo: a fonte da confirmação entrava no escopo e não tinha passado por análise. Essa fonte agora conta como contexto já confiado. Qualquer código de recusa estável que ainda não tenha frase pronta fica gravado cru, para a falha não aparecer sem nome. O comando `external-analyst` também zera a espera dos trabalhos já enfileirados. Não há reparo de dado no repositório.
+
+`desktop screenshots` diz o caminho exato do executável `mac-capture` para Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela (botão +, Cmd+Shift+G, colar o caminho). Sem essa permissão o texto continua. Com ela, a imagem vai para `attachments/` e a fonte aponta para o arquivo.
+
+Para atualizar uma instalação que já está em uso, na pasta que o serviço usa (checkout detached; não use `git pull` e não instale pacote):
+
+```text
+git fetch origin
+git checkout COMMIT_PUBLICADO
+```
+
+`COMMIT_PUBLICADO` é o commit desta versão no Git. Não rode `python3 -m pip install -e .` e não use `--break-system-packages`. Os comandos são `python3 -m company_pilot`, com a configuração que o fundador já tem no lugar de `CONFIG`, o login GitHub do operador no lugar de `LOGIN_DO_OPERADOR` e a configuração do coletor no lugar de `DEVICE_CONFIG`.
+
+Se o `operator watch` da `0.1.3` ainda estiver rodando neste Mac, pare-o antes: Ctrl+C no terminal, ou encerre o processo em segundo plano. A fila antiga não pode chamar o modelo junto com esta atualização.
+
+```text
+python3 -m company_pilot --config CONFIG setup external-analyst --login LOGIN_DO_OPERADOR
+python3 -m company_pilot --config CONFIG setup screenshots --founder yes --team yes
+python3 -m company_pilot --config CONFIG setup consent --participate yes --screenshots yes --reviewed-defaults
+python3 -m company_pilot.desktop enable-capture --config DEVICE_CONFIG
+launchctl kickstart -k "gui/$(id -u)/com.company-pilot.desktop"
+python3 -m company_pilot.desktop screenshots --config DEVICE_CONFIG
+python3 -m company_pilot.desktop status --config DEVICE_CONFIG
+```
+
+Não rode `operator watch` no Mac do fundador. Não apague a configuração nem o cérebro.
+
 ## 0.1.3
 
 No computador de trabalho, a captura entra como trabalho da empresa. Um nome confirmado (`setup confirm-names`) continua útil para ligar a janela ao projeto, mas não decide mais se a captura sai do Mac. O que é claramente pessoal continua só no computador: as exclusões que a pessoa já gravou, e uma lista embutida de superfícies pessoais.

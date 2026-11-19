@@ -114,7 +114,9 @@ def validate_config(config):
                 or not re.fullmatch(r"[0-9a-f]{40}", commit)):
             raise CliError("DESTINOS_DIVERGENTES", "O destino da empresa e a origem do software precisam estar separados e identificados.", "Peça ao operador um START-HERE preparado; não use o repositório do software como cérebro.")
     operator = config.get("operator", {})
-    _keys(operator, {"health_file", "poll_seconds", "retry_initial_seconds", "retry_max_seconds", "max_failures", "claude_executable", "execution_provenance"})
+    _keys(operator, {"health_file", "poll_seconds", "retry_initial_seconds", "retry_max_seconds", "max_failures", "claude_executable", "execution_provenance", "analysis"})
+    if operator.get("analysis", "local") not in ("local", "external"):
+        raise CliError("CONFIGURACAO_INVALIDA", "O modo de análise do operador não é reconhecido.", "Use analysis local ou external. external significa que este computador não chama modelo.")
     provenance = operator.get("execution_provenance")
     if provenance is not None:
         _keys(provenance, {"provider", "model", "origin"})
@@ -157,6 +159,21 @@ def build_brain(config):
         backend = GitHubStore(store["repo"], branch=store["branch"], mirror_dir=store["mirror"],
                               development=config["mode"] == "synthetic")
     return Brain(backend)
+
+
+def _device_skips_model(config, brain):
+    """The founder machine stores captures. It does not call the analyst model.
+
+    If this computer cannot prove it is the configured analyst, do not call the model.
+    """
+    if config.get("operator", {}).get("analysis") == "external":
+        return True
+    try:
+        actor = brain.store.authenticated_actor()["id"]
+        workers = brain.snapshot()["company"].get("semantic_workers") or []
+    except Exception:
+        return True
+    return actor not in workers
 
 
 def default_interpreter(config):
@@ -435,6 +452,9 @@ def parser():
     consent.add_argument("--screenshots", choices=("yes", "no"), required=True)
     consent.add_argument("--personal-exclusion", action="append", default=[])
     consent.add_argument("--reviewed-defaults", action="store_true", required=True)
+    analyst = setup_actions.add_parser("external-analyst", help="Entregar a análise a uma conta e parar o modelo neste computador.")
+    analyst.add_argument("--login", required=True, help="Login GitHub do operador que grava a análise. O fundador continua gravando capturas e respostas.")
+    analyst.add_argument("--event-id", help="UUID estável da entrega.")
     init = commands.add_parser("init", help="Inicializar o cérebro e gravar a configuração privada.")
     init.add_argument("--name", required=True, help="Nome informado pelo fundador.")
     init.add_argument("--mode", choices=("synthetic", "company"), required=True, help="Separar dados sintéticos dos dados reais da empresa.")
@@ -507,6 +527,13 @@ def parser():
     watch = operations.add_parser("watch", help="Manter análise ativa até Ctrl+C/SIGTERM; intervalo padrão de 60s, sem recuperação de horários perdidos.")
     watch.add_argument("--max-cycles", type=int, help="Limitar as rodadas desta execução.")
     operations.add_parser("health", help="Ler o último recibo local de saúde; não prova que o processo continua vivo.")
+    pull = operations.add_parser("pull", help="Sincronizar o mirror dos registros. Com --output, também grava os trabalhos pendentes.")
+    pull.add_argument("--output", type=Path, help="Pasta dos arquivos de trabalho, um JSON por análise.")
+    export = operations.add_parser("export", help="Gravar os trabalhos pendentes para o analista externo, com texto, anexos, escopo e schema.")
+    export.add_argument("--output", type=Path, required=True)
+    submit = operations.add_parser("submit", help="Validar o JSON do analista, aplicar e gravar no repositório. Recusa devolve o motivo.")
+    submit.add_argument("--job", required=True, help="Id do trabalho exportado.")
+    submit.add_argument("--file", type=Path, required=True, dest="result_file")
     nora = commands.add_parser("nora", help="Consultar ou operar somente a rota explicitamente verificada.")
     nora_actions = nora.add_subparsers(dest="action", required=True, parser_class=Parser)
     nora_actions.add_parser("health", help="Ler metadados de pendências, rota e agenda.")
@@ -571,6 +598,15 @@ def _safe_error(error):
         "repository_write_required": (
             "ACESSO_NAO_CONFIRMADO", "A conta autenticada não tem escrita confirmada no repositório.",
             "Confira identidade, repositório e permissão efetiva com o operador. Preserve a fila; não troque de conta nem amplie a permissão para contornar a política do fundador."),
+        "configured_semantic_worker_required": (
+            "ACESSO_NAO_CONFIRMADO", "Esta conta não grava análise. Só o operador semântico configurado faz isso.",
+            "No computador do fundador a análise fica desligada. No computador do operador, use operator export e operator submit."),
+        "semantic_operator_login_required": (
+            "DADOS_NAO_ACEITOS", "O login do operador semântico não é um login GitHub.",
+            "Use o login da conta que vai gravar a análise, sem senha e sem token."),
+        "unknown_analysis_job": (
+            "DADOS_NAO_ACEITOS", "Esse trabalho não está pendente.",
+            "Rode operator export de novo e use o id de um arquivo ainda pendente."),
         "configured_watchdog_actor_required": (
             "ACESSO_NAO_CONFIRMADO", "Esta conta não está autorizada a registrar fontes da empresa pelo watchdog.",
             "O fundador deve conferir a identidade do operador e registrar a decisão com policy watchdog-actors. Não copie credenciais de outra pessoa."),
@@ -706,6 +742,28 @@ def main(argv=None, *, brain_factory=None, interpreter_factory=None, nora_factor
                 result = device(config_path, config, args.installation_receipt)
             elif args.action == "consent":
                 result = consent(config_path, config, brain, args.participate == "yes", args.screenshots == "yes", args.personal_exclusion)
+            elif args.action == "external-analyst":
+                def analyst_state():
+                    snapshot = brain.snapshot()
+                    now = datetime.now(timezone.utc)
+                    deferred = False
+                    for job in snapshot.get("pending_jobs", []):
+                        stamp = job.get("next_attempt_at")
+                        if job.get("status") == "pending" and isinstance(stamp, str):
+                            try:
+                                when = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+                            except ValueError:
+                                continue
+                            if when > now:
+                                deferred = True
+                    return {"workers": snapshot["company"].get("semantic_workers"), "deferred": deferred}
+                result = operation(config_path, "external-analyst", [args.login],
+                                   lambda event: brain.assign_external_analyst(args.login, event),
+                                   args.event_id, state_reader=analyst_state)
+                config.setdefault("operator", {})["analysis"] = "external"
+                write_private_json(config_path, config)
+                result = {**result, "analysis": "external", "local_model": False,
+                          "message": "Este computador não chama mais o modelo. Capturas e respostas continuam sendo gravadas. A análise fica com o operador " + args.login + "."}
             else:
                 choices = {"founder": args.founder == "yes", "team": args.team == "yes"}
                 result = operation(config_path, "screenshots", choices, lambda event: brain.update_policy({"screenshots": choices}, event),
@@ -797,20 +855,32 @@ def main(argv=None, *, brain_factory=None, interpreter_factory=None, nora_factor
                     result = brain.set_participation(value, args.event_id)
             _emit(result, out)
         elif args.command == "operator":
-            from .inference.worker import SemanticWorker
-            worker = SemanticWorker(brain, interpreter_factory(config))
-            nora = nora_factory(brain, config)
-            nora_setting = config.get("nora", {})
-            cursor_path = nora_setting.get("cursor_file", str(config_path.parent / "nora-inbox-cursor.json"))
-            intake = None
-            if nora is not None and nora_setting.get("inbox_file"):
-                intake = lambda: consume_spool(brain, nora, nora_setting["inbox_file"], nora_setting, cursor_path)
-            operator = Operator(worker, brain=brain, nora=nora, intake=intake, health_file=health_file,
-                                poll_seconds=setting.get("poll_seconds", 60), retry_initial_seconds=setting.get("retry_initial_seconds", 5),
-                                retry_max_seconds=setting.get("retry_max_seconds", 60), max_failures=setting.get("max_failures", 5), stop=stop)
+            if args.action in ("pull", "export", "submit"):
+                from .inference.external import export_jobs, load_result, pull_records, submit_analysis
+                if args.action == "pull":
+                    result = pull_records(brain)
+                    if args.output:
+                        result.update(export_jobs(brain, args.output))
+                    _emit(result, out)
+                    return 0
+                if args.action == "export":
+                    _emit(export_jobs(brain, args.output), out)
+                    return 0
+                try:
+                    payload = load_result(args.result_file)
+                except (OSError, UnicodeError, ValueError, TypeError):
+                    raise CliError("ARQUIVO_INVALIDO", "Não foi possível ler o JSON da análise.", "Grave um objeto JSON UTF-8 de até 1 MiB e envie de novo o mesmo trabalho.") from None
+                result = submit_analysis(brain, args.job, payload)
+                _emit(result, out)
+                return 0 if result.get("ok") else 2
+            external_message = {"status": "external", "analysis": "not_run", "local_model": False,
+                                "message": "Este computador não analisa. Ele só separa o pessoal do trabalho e envia o trabalho. O operador externo usa operator pull, operator export e operator submit."}
+            if _device_skips_model(config, brain) and args.action in ("once", "watch", "apply", "commit-literal"):
+                _emit(external_message, out)
+                return 0
             if args.action == "prompt":
                 jobs = brain.snapshot().get("pending_jobs", [])
-                write_private_json(args.output, {"instrucao": "Leia as fontes citadas e escreva somente o que elas sustentam. Não invente fato, não envie mensagem e não ligue captura. Grave o JSON e rode operator apply --file.", "jobs": jobs})
+                write_private_json(args.output, {"instrucao": "Leia as fontes citadas e escreva somente o que elas sustentam. Não invente fato, não envie mensagem e não ligue captura. O operador externo grava o JSON com operator submit --job ID --file. Este arquivo não chama modelo.", "jobs": jobs})
                 _emit({"ok": True, "state": "prompt_written", "path": str(args.output), "pending": len(jobs)}, out)
                 return 0
             if args.action == "commit-literal":
@@ -835,6 +905,17 @@ def main(argv=None, *, brain_factory=None, interpreter_factory=None, nora_factor
                 receipt = brain.apply_analysis(job_id, payload, metadata={"execution_provider": "founder_assistant", "execution_model": "assistant_file", "execution_origin": "operator_apply", "execution_identity_basis": "assistant_file"})
                 _emit({"ok": True, "state": receipt.get("state", "applied"), "job_id": job_id}, out)
                 return 0
+            from .inference.worker import SemanticWorker
+            worker = SemanticWorker(brain, interpreter_factory(config))
+            nora = nora_factory(brain, config)
+            nora_setting = config.get("nora", {})
+            cursor_path = nora_setting.get("cursor_file", str(config_path.parent / "nora-inbox-cursor.json"))
+            intake = None
+            if nora is not None and nora_setting.get("inbox_file"):
+                intake = lambda: consume_spool(brain, nora, nora_setting["inbox_file"], nora_setting, cursor_path)
+            operator = Operator(worker, brain=brain, nora=nora, intake=intake, health_file=health_file,
+                                poll_seconds=setting.get("poll_seconds", 60), retry_initial_seconds=setting.get("retry_initial_seconds", 5),
+                                retry_max_seconds=setting.get("retry_max_seconds", 60), max_failures=setting.get("max_failures", 5), stop=stop)
             if args.action == "once":
                 result = operator.once()
                 operator._save("attention_required" if operator.failures else "stopped")

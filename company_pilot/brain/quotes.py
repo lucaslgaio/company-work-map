@@ -12,13 +12,12 @@ from .stores import BrainError
 MANUAL_INTERVIEW_ATTEMPTS = 3
 MANUAL_INTERVIEW_MESSAGE = (
     "A leitura automática desta resposta foi recusada várias vezes. "
-    "Não repita o mesmo pedido. Use operator prompt e operator apply com o assistente, "
-    "ou operator commit-literal para guardar o texto como foi escrito."
+    "Não repita o mesmo pedido. O operador externo lê o trabalho com operator export, "
+    "corrige o JSON e grava com operator submit."
 )
 MANUAL_COMMANDS = (
-    'python3 -m company_pilot --config "$PWD/.company-pilot-local/company.json" operator prompt --output "$PWD/.company-pilot-local/pedido.json"',
-    'python3 -m company_pilot --config "$PWD/.company-pilot-local/company.json" operator apply --file "$PWD/.company-pilot-local/analise.json"',
-    'python3 -m company_pilot --config "$PWD/.company-pilot-local/company.json" operator commit-literal',
+    'python3 -m company_pilot --config CONFIG operator export --output JOBS',
+    'python3 -m company_pilot --config CONFIG operator submit --job JOB --file result.json',
 )
 
 _QUOTE_CHARS = set("\"'«»“”„‟‘’‚‛‹›`´")

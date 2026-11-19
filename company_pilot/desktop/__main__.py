@@ -1,6 +1,7 @@
 """Desktop entry point: agent-context health controls readiness."""
 import argparse
 import json
+import platform
 from pathlib import Path
 import sys
 import time
@@ -25,11 +26,25 @@ class FixtureNative:
     def screenshot(self, expected): raise NativeFailure("fixture_has_no_native_image")
 
 
-SCREEN_RECORDING_STEPS = (
-    "A gravação de tela não está autorizada. Abra Ajustes do Sistema > Privacidade e Segurança > "
-    "Gravação de Tela, adicione o coletor (o Python que executa company_pilot.desktop) e reinicie o serviço: "
-    "launchctl kickstart -k gui/$(id -u)/com.company-pilot.desktop. A captura de texto continua sem essa permissão."
-)
+def screen_capture_binary(system=None):
+    """The process macOS must authorize. Python, Claude and Chrome do not take the image."""
+    system = system or platform.system()
+    name = "windows-capture.ps1" if system == "Windows" else "mac-capture"
+    return (Path(__file__).resolve().parent / "native" / name)
+
+
+def screen_recording_steps(binary):
+    path = str(binary)
+    missing = "" if binary.is_file() else " Se o arquivo ainda não existir, rode o instalador; ele compila esse executável. "
+    return (
+        "A gravação de tela não está autorizada para o programa que tira a imagem. "
+        "O macOS só lista o que já foi adicionado; Claude e o Chrome não substituem este arquivo. "
+        "Abra Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, clique no botão +, "
+        f"pressione Cmd+Shift+G, cole este caminho e confirme: {path}. "
+        + missing +
+        "Depois reinicie o serviço: launchctl kickstart -k gui/$(id -u)/com.company-pilot.desktop. "
+        "A captura de texto continua sem essa permissão."
+    )
 
 
 def screenshot_report(config, policy, box, probe):
@@ -41,19 +56,20 @@ def screenshot_report(config, policy, box, probe):
     stored = box.db.execute("SELECT count(*) FROM events WHERE image IS NOT NULL").fetchone()[0]
     buffered = box.db.execute("SELECT count(*) FROM episodes WHERE image IS NOT NULL").fetchone()[0]
     taking = bool(allowed and granted and (stored or buffered))
+    binary = screen_capture_binary("Darwin" if probe and probe.get("platform") == "macOS" else None)
     if not allowed:
         step = "A política ainda não permite imagens. No config da empresa: setup screenshots --founder yes --team yes. No mesmo computador: setup consent --participate yes --screenshots yes --reviewed-defaults. Depois ative de novo a captura."
-    elif probe.get("platform") == "macOS" and probe.get("screen_recording_granted") is not True:
-        step = SCREEN_RECORDING_STEPS
+    elif probe and probe.get("platform") == "macOS" and probe.get("screen_recording_granted") is not True:
+        step = screen_recording_steps(binary)
     elif taking:
         step = "As imagens estão sendo gravadas nesta fila e seguem com a captura para o repositório, em attachments/, ligadas à fonte."
     elif allowed and granted and config.get("capture_enabled") is True:
         step = "A permissão e a política permitem imagens. Esta fila ainda não tem uma imagem; a próxima janela de trabalho deve gerar uma."
     else:
         step = "A política permite imagens, mas o coletor ainda não gravou nenhuma nesta fila. Confira se a captura está ligada e se o serviço foi reiniciado."
-    return {"policy_allowed": allowed, "screen_recording_granted": bool(probe.get("screen_recording_granted")) if probe.get("platform") == "macOS" else granted,
+    return {"policy_allowed": allowed, "screen_recording_granted": bool(probe.get("screen_recording_granted")) if probe and probe.get("platform") == "macOS" else granted,
             "images_stored": stored, "images_buffered": buffered, "actually_taking": taking,
-            "text_capture_continues": True, "next_step": step}
+            "text_capture_continues": True, "binary_path": str(binary), "next_step": step}
 
 
 def diagnose(config, native, transport, get_policy, health_path):

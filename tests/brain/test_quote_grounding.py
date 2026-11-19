@@ -152,12 +152,12 @@ class QuoteGroundingBrainTests(unittest.TestCase):
         self.assertEqual(progress["state"], "pending_analysis")
         self.assertEqual(progress["recommended_route"], "manual")
         self.assertEqual(progress["founder_message"], MANUAL_INTERVIEW_MESSAGE)
-        self.assertTrue(any(command.endswith("operator commit-literal") for command in progress["manual_commands"]))
-        self.assertIn("operator prompt", progress["founder_message"])
+        self.assertTrue(any("operator submit" in command for command in progress["manual_commands"]))
+        self.assertIn("operator export", progress["founder_message"])
         self.assertIn(MANUAL_INTERVIEW_MESSAGE, self.brain.store.read().files["views/fila.md"])
         status = queue_status(self.brain.snapshot(), datetime(2026, 11, 19, tzinfo=timezone.utc))
         self.assertEqual(status["recommended_route"], "manual")
-        self.assertIn("operator commit-literal", status["summary"])
+        self.assertIn("operator submit", status["summary"])
         self.assertNotIn("relatório", status["summary"])
         root = Path(self.temp.name)
         config_dir = root / "cli"
@@ -168,10 +168,10 @@ class QuoteGroundingBrainTests(unittest.TestCase):
         out = StringIO()
         self.assertEqual(main(["--config", str(config), "status"], out=out, err=StringIO()), 0)
         reported = json.loads(out.getvalue())
-        self.assertEqual(reported["version"], "0.1.3")
+        self.assertEqual(reported["version"], "0.1.4")
         self.assertEqual(reported["recommended_route"], "manual")
         self.assertEqual(reported["founder_message"], MANUAL_INTERVIEW_MESSAGE)
-        self.assertTrue(any("operator apply" in command for command in reported["manual_commands"]))
+        self.assertTrue(any("operator submit" in command for command in reported["manual_commands"]))
         operator = Operator(SemanticWorker(self.brain, _Scripted(lambda _source: (_ for _ in ()).throw(AssertionError("blind retry")))),
                             brain=self.brain, health_file=health)
         once = operator.once()
@@ -180,7 +180,7 @@ class QuoteGroundingBrainTests(unittest.TestCase):
         self.assertEqual(main(["--config", str(config), "operator", "health"], out=health_out, err=StringIO()), 0)
         health_report = json.loads(health_out.getvalue())
         self.assertEqual(health_report["processing"]["recommended_route"], "manual")
-        self.assertIn("operator commit-literal", health_report["processing"]["summary"])
+        self.assertIn("operator submit", health_report["processing"]["summary"])
         self.assertNotIn(SOURCE, health_out.getvalue())
 
 

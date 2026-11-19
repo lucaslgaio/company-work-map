@@ -66,7 +66,7 @@ def queue_status(snapshot, at=None):
     from .brain.knowledge import RECOGNITION_HEALTH_MESSAGE, recognition_is_confirmed
     from .brain.quotes import MANUAL_INTERVIEW_MESSAGE, awaiting_manual_interview
     summary = (f"{len(jobs)} registro(s) aguardam processamento ou esclarecimento; {len(answer_jobs)} são respostas já recebidas. "
-               "O assistente do fundador pode ler a resposta e registrar o entendimento; se ele não estiver disponível, o texto fica guardado como foi escrito. Não depende de um programa chamado claude.")
+               "A leitura que vira atividade roda no operador externo, com operator export e operator submit. Este computador não chama modelo.")
     manual = any(awaiting_manual_interview(job) for job in jobs)
     if manual:
         summary = summary + " " + MANUAL_INTERVIEW_MESSAGE

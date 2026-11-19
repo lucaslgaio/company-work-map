@@ -159,13 +159,17 @@ ANALYSIS_SCHEMA["properties"]["record_extraction"] = _object({
     "complete": {"type": "boolean"},
     "limitations": {"type": "array", "items": {"type": "string"}},
 })
+ANALYSIS_SCHEMA["properties"]["outcome"] = {"anyOf": [
+    {"type": "null"},
+    {"type": "string", "enum": ["no_work"]},
+]}
 
 
 def schema_for_job(job_kind=None):
     """Apply the multi-task record bound without narrowing legacy answer jobs."""
     if job_kind not in ("company_record", "observation"):
         return ANALYSIS_SCHEMA
-    bounds = {"minItems": 1, "maxItems": 3} if job_kind == "observation" else {"maxItems": 50}
+    bounds = {"minItems": 0, "maxItems": 3} if job_kind == "observation" else {"maxItems": 50}
     return {**ANALYSIS_SCHEMA, "properties": {**ANALYSIS_SCHEMA["properties"],
             "tasks": {**ANALYSIS_SCHEMA["properties"]["tasks"], **bounds}}}
 

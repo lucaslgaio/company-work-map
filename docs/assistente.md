@@ -1,18 +1,10 @@
 # Assistente do fundador
 
-A entrevista e as capturas podem ser lidas por você, o assistente que o fundador já usa. Não é preciso instalar ou autenticar um programa chamado `claude`.
+A partir da `0.1.4` este computador não analisa. Ele guarda a resposta da entrevista e a captura de trabalho. A leitura que vira atividade, cadeia, nota ou pergunta é do operador externo, no computador dele, com a conta configurada em `setup external-analyst`. Não chame um programa chamado `claude` e não rode `operator watch`, `operator apply` nem `operator commit-literal` aqui: esta conta não grava análise.
 
-## Quando houver uma resposta esperando
+O laço do operador está em `OPERATOR.md`: `operator pull`, `operator export`, ler o JSON, escrever o resultado e `operator submit`.
 
-1. Rode `operator prompt --output CAMINHO_PRIVADO/pedido.json` com a configuração do operador.
-2. Leia o pedido e as fontes que ele cita. Escreva um JSON no formato que o cérebro já aceita: tarefas, campos e trechos que existem literalmente na fonte. Não invente nome, valor ou repasse.
-3. Rode `operator apply --file CAMINHO_PRIVADO/analise.json`.
-
-## Se você não puder interpretar
-
-Rode `operator commit-literal`. A frase do fundador entra no assunto da entrevista como ele escreveu. O mapa não fica parado à espera de outro programa.
-
-`interview next` diz isso em português enquanto a resposta espera. Se a leitura automática da mesma entrevista for recusada várias vezes, `interview next`, `status` e `operator health` pedem este caminho (`operator prompt` e `operator apply`, ou `operator commit-literal`) em vez de repetir o mesmo pedido.
+`interview next` continua mostrando a próxima pergunta. A resposta fica guardada com `interview answer`. Se a mesma entrevista for recusada várias vezes, o aviso pede `operator export` e `operator submit` no computador do operador, não outra tentativa igual neste Mac.
 
 ## Fatos que se somam
 
