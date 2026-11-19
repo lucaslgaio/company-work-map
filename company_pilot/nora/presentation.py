@@ -58,6 +58,9 @@ def askability(q: Question) -> str | None:
         return "excluded_by_recorded_privacy_decision"
     if q.privacy_disposition == "withheld":
         return "withheld_coverage_only"
+    blob_early = " ".join((q.activity_summary or "", q.prompt or "")).casefold()
+    if "ainda desconhecido no aplicativo" in blob_early or "nenhum título, texto de janela" in blob_early:
+        return "coverage_gap_not_asked"
     if not q.evidence:
         return "authorized_evidence_missing"
     if q.target_kind == "context" and not _record(q):

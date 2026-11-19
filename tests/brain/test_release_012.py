@@ -170,7 +170,7 @@ class RecognitionNameTests(unittest.TestCase):
         self.assertEqual(self.brain.snapshot()["recognition_markers"], [])
         gap = self.brain.interview_next()["recognition"]
         self.assertEqual(gap["confirmed_count"], 0)
-        self.assertEqual(gap["capture_effect"], "uncertain_until_names_confirmed")
+        self.assertEqual(gap["capture_effect"], "shared_by_default_names_improve_linking")
         self.assertIn("confirm-names", gap["command"])
         self.assertEqual({(item["name"], item["kind"]) for item in gap["candidates"]}, {
             ("Monte Vita", "company_alias"),
@@ -198,7 +198,9 @@ class RecognitionNameTests(unittest.TestCase):
         at = datetime.now(timezone.utc)
         from dataclasses import replace
         before = replace(Policy.from_brain(self.brain.device_policy()), capture_allowed=True, local_exclusions_bound=True)
-        self.assertEqual(before.classify({"title": "Obra Apartamento LM"}, at).state, "uncertain")
+        early = before.classify({"title": "Obra Apartamento LM"}, at)
+        self.assertEqual(early.state, "company")
+        self.assertEqual(early.reason, "work_computer_default")
         head = self.brain.store.read().head
         with self.assertRaisesRegex(BrainError, "marker_name_must_be_literal_in_source"):
             self.brain.confirm_recognition_names([{"value": "Outra Obra", "kind": "record_name"}], uid())
@@ -218,9 +220,13 @@ class RecognitionNameTests(unittest.TestCase):
         self.assertEqual(self.brain.snapshot()["recognition_markers"] and len(self.brain.snapshot()["recognition_markers"]), 3)
         self.assertNotIn("recognition", self.brain.interview_next())
         after = replace(Policy.from_brain(self.brain.device_policy()), capture_allowed=True, local_exclusions_bound=True)
-        self.assertEqual(after.classify({"title": "Obra Apartamento LM — medições"}, at).state, "company")
+        linked = after.classify({"title": "Obra Apartamento LM — medições"}, at)
+        self.assertEqual(linked.state, "company")
+        self.assertTrue(any(signal.startswith("work_marker:") for signal in linked.signals))
         self.assertEqual(after.classify({"title": "Cronograma de Gestão de Obra"}, at).state, "company")
-        self.assertEqual(after.classify({"title": "Receita de bolo"}, at).state, "uncertain")
+        plain = after.classify({"title": "Receita de bolo"}, at)
+        self.assertEqual(plain.state, "company")
+        self.assertEqual(plain.reason, "work_computer_default")
         self.assertEqual(after.classify({"title": "Obra Apartamento LM", "privacy_disposition": "withheld"}, at).state, "uncertain")
         self.brain.update_policy({"personal_exclusions": ["conta pessoal"]}, uid())
         personal = replace(Policy.from_brain(self.brain.device_policy()), capture_allowed=True, local_exclusions_bound=True)

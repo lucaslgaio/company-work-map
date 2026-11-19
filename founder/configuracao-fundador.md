@@ -81,17 +81,26 @@ Escolha o assunto correspondente (`activities`, `people`, `stages`, `tracking` o
 
 Após a liberação da versão, siga apenas a etapa de instalação do [roteiro da equipe](configuracao-equipe.md), usando o pacote já verificado. O instalador prepara os arquivos com captura desativada. Guarde `installation.json`; se a pasta instalada mudar, use seus caminhos reais para os comandos seguintes.
 
-Pergunte separadamente se a empresa permite imagens do trabalho no computador do fundador e nos computadores da equipe. Grave as duas escolhas com `setup screenshots --founder yes|no --team yes|no`; o exemplo é sintaxe, não aceite. Cada participante ainda decide se participa e se permite imagens. A imagem exige as duas permissões.
+O padrão desta versão é gravar a imagem da janela de trabalho. Grave `setup screenshots --founder yes --team yes`, salvo se a pessoa recusar um dos dois. Cada participante ainda confirma a própria imagem no consentimento. A imagem só sai se a empresa e a pessoa aceitarem.
 
 No computador do fundador, execute `setup device --installation-receipt INSTALLATION_JSON`, usando o recibo do instalador. Depois confira com a própria pessoa os padrões locais `cartão pessoal`, `conta pessoal`, `e-mail pessoal`, `conteúdo pessoal`, `uso pessoal` e `perfil pessoal`, além de exclusões específicas que ela escolher. Uma conta pessoal pode usar o mesmo banco/navegador da empresa; não exclua o aplicativo inteiro por suposição. Reconhecimento imperfeito continua uma limitação.
 
-Se `setup status`, `interview next` ou `operator health` disser que nenhum nome de reconhecimento foi confirmado, as capturas ficam incertas. Os nomes que a entrevista já citou aparecem como candidatos, ainda sem efeito. Confirme só os que o fundador aceitar, com o tipo correspondente (`record_name` para projeto ou registro, `company_alias` para o nome da empresa, `record_ref` ou `business_account` quando for o caso):
+Se `setup status`, `interview next` ou `operator health` disser que nenhum nome de reconhecimento foi confirmado, a captura do computador de trabalho continua entrando como trabalho. O nome confirmado só melhora o vínculo com o projeto. Os nomes que a entrevista já citou aparecem como candidatos. Confirme só os que o fundador aceitar, com o tipo correspondente (`record_name` para projeto ou registro, `company_alias` para o nome da empresa, `record_ref` ou `business_account` quando for o caso):
 
 ```text
 PYTHON -m company_pilot --config COMPANY_CONFIG setup confirm-names --name "NOME" --kind record_name
 ```
 
-O comando não escolhe nomes sozinho. Uma janela sem um nome confirmado, ou marcada como pessoal, continua de fora.
+O comando não escolhe nomes sozinho. Uma janela sem nome confirmado entra como trabalho. Continua de fora só o que for claramente pessoal: as exclusões deste computador e a lista embutida (banco e corretora pessoais, saúde pessoal, namoro, streaming, redes sociais pessoais, gerenciador de senha, janela anônima, tela bloqueada). WhatsApp, LinkedIn e YouTube não estão nessa lista.
+
+A imagem da janela de trabalho é o padrão. Grave `setup screenshots --founder yes --team yes` e, no consentimento desta pessoa, `--screenshots yes`. Se o macOS ainda não autorizou a Gravação de Tela, o texto segue. Abra Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, adicione o coletor e reinicie o serviço:
+
+```text
+launchctl kickstart -k "gui/$(id -u)/com.company-pilot.desktop"
+PYTHON -m company_pilot.desktop screenshots --config DEVICE_CONFIG
+```
+
+`actually_taking` diz se a imagem está sendo gravada. `DEVICE_CONFIG` é a configuração do coletor neste computador.
 
 Após a decisão pessoal, o assistente usa `setup consent --participate yes|no --screenshots yes|no --reviewed-defaults`, acrescentando `--personal-exclusion TERMO` apenas para termos escolhidos neste computador. O comando gera os arquivos e o recibo; os termos pessoais ficam locais. Recusa mantém captura bloqueada. Política nova exige nova conferência da pessoa, sem reaplicar um aceite antigo para contornar o bloqueio.
 

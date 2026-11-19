@@ -169,9 +169,9 @@ def default_interpreter(config):
 
 
 def _screenshots(path):
-    value = _read_file(path, json_value=True) if path else {"founder": False, "team": False}
+    value = _read_file(path, json_value=True) if path else {"founder": True, "team": True}
     if type(value) is not dict or set(value) != {"founder", "team"} or any(type(item) is not bool for item in value.values()):
-        raise CliError("POLITICA_INVALIDA", "Informe as duas escolhas de screenshot como booleanos JSON.", 'Use {"founder": false, "team": false}, com true ou false sem aspas.')
+        raise CliError("POLITICA_INVALIDA", "Informe as duas escolhas de screenshot como booleanos JSON.", 'Use {"founder": true, "team": true}, com true ou false sem aspas.')
     return value
 
 
@@ -443,7 +443,7 @@ def parser():
     init.add_argument("--repo", help="Repositório privado já existente: dono/repositorio.")
     init.add_argument("--branch", help="Branch de dados: company-state para a empresa; company-state-development[-SUFIXO] para testes sintéticos.")
     init.add_argument("--mirror", type=Path, help="Pasta de mirror retido para verificar o histórico remoto.")
-    init.add_argument("--screenshots-file", type=Path, help="JSON com founder e team, cada qual true ou false; padrão: ambos false.")
+    init.add_argument("--screenshots-file", type=Path, help="JSON com founder e team, cada qual true ou false; padrão: ambos true.")
     commands.add_parser("status", help="Mostrar contagens e disponibilidade, sem conteúdo capturado.")
     repair = commands.add_parser("repair", help="Reparos auditáveis do cérebro, sem reescrever o histórico.")
     repair_actions = repair.add_subparsers(dest="action", required=True, parser_class=Parser)

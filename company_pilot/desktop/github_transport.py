@@ -82,8 +82,9 @@ class BrainTransport:
                 "permission_boundary": "whole_repository", "owner_credentials_distributed": False}
 
     def upload_attachment(self, event_id, data, digest):
-        receipt = self._invoke(lambda: self.brain.upload_attachment(event_id, data, digest, media_type="image/png"))
-        return {"id": receipt["attachment_id"], "sha256": receipt["sha256"]}
+        media = "image/jpeg" if data.startswith(b"\xff\xd8\xff") else "image/png"
+        receipt = self._invoke(lambda: self.brain.upload_attachment(event_id, data, digest, media_type=media))
+        return {"id": receipt["attachment_id"], "sha256": receipt["sha256"], "media_type": media}
 
     @staticmethod
     def wire(payload):
@@ -104,7 +105,7 @@ class BrainTransport:
                   "synthetic": payload.get("development_fixture") is True}
         if payload.get("attachments"):
             evidence = payload["attachments"][0]
-            result["screenshot"] = {"attachment_id": evidence["id"], "sha256": evidence["sha256"], "media_type": "image/png"}
+            result["screenshot"] = {"attachment_id": evidence["id"], "sha256": evidence["sha256"], "media_type": evidence.get("media_type", "image/png")}
         return result
 
     def _invoke(self, operation):

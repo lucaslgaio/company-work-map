@@ -417,6 +417,7 @@ class ClaudeInterpreter:
                 "ou exclusão de tarefa; remoção de registro é tratada pelo core sem apagar fatos "
                 "apoiados. next_question é null; o Brain controla perguntas e lacunas.",
             "observation": "Extraia de uma a três tarefas granulares distintas apoiadas na captura. "
+                "Se a fonte tiver um anexo de imagem, ele é a captura da mesma janela; cite só o texto. "
                 "Cada tarefa nova precisa de evidência da observação atual em job.source_ids; "
                 "uma fonte anterior sozinha não autoriza criar trabalho novo. Não descarte uma "
                 "atividade distinta só porque a mesma captura também mostra outra. "

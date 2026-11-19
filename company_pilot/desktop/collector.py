@@ -6,6 +6,7 @@ import uuid
 from typing import Callable, Protocol
 
 from .outbox import CapacityError, LeaseLost, Outbox, canonical
+from .personal import redact_secrets
 from .policy import Policy, utcnow
 
 
@@ -36,6 +37,12 @@ def _identity(surface: dict):
     return tuple(surface.get(key) for key in ("window_id", "process_id", "title", "record_ref"))
 
 
+def _acceptable_image(image: bytes) -> bool:
+    if not isinstance(image, bytes) or not 0 < len(image) <= 2 * 1024 * 1024:
+        return False
+    return image.startswith(b"\x89PNG\r\n\x1a\n") or image.startswith(b"\xff\xd8\xff")
+
+
 class Collector:
     def __init__(self, device_id: str, native: Native, outbox: Outbox,
                  policy: Callable[[], Policy], clock: Callable[[], datetime] = utcnow,
@@ -43,13 +50,16 @@ class Collector:
         self.device_id = str(uuid.UUID(device_id))
         self.native, self.outbox, self.policy, self.clock = native, outbox, policy, clock
         self.episode_seconds = episode_seconds
+        self._last_screenshot = {}
 
     def reclassify_quarantine(self):
         current, now = self.policy(), self.clock()
         if not current.valid(now):
             return 0
         count = 0
-        for item in self.outbox.quarantine_pending(now.timestamp()):
+        # Read every pending row, including one whose 24h clock has already
+        # arrived, before any expiry delete. An empty quarantine is a no-op.
+        for item in self.outbox.quarantine_open():
             current = self.policy()
             if not current.valid(self.clock()):
                 return count
@@ -60,11 +70,12 @@ class Collector:
                 continue
             if decision.state != "company":
                 continue
-            text = "Metadados observados antes de estabelecer o contexto da empresa:\nTítulo: " + str(surface["title"]) + "\nReferência: " + str(surface["record_ref"])
+            text = redact_secrets("Metadados observados no computador de trabalho:\nTítulo: " + str(surface.get("title", "")) + "\nReferência: " + str(surface.get("record_ref", "")))
+            reason = "founder_context_resolved_local_metadata" if decision.reason == "learned_company_context" else "work_computer_default"
             payload = {"schema_version": 1, "event_id": str(uuid.uuid5(uuid.UUID(item["id"]), "promoted")), "device_id": self.device_id,
                        "observed_at": item["observed_at"], "source": {"kind": "desktop_window_metadata", **surface},
                        "evidence": {"text": text, "text_sha256": sha256(text.encode()).hexdigest()},
-                       "classification": {"state": "company", "signals": list(decision.signals), "reason": "founder_context_resolved_local_metadata", "context_version": current.context_version},
+                       "classification": {"state": "company", "signals": list(decision.signals), "reason": reason, "context_version": current.context_version},
                        "policy": {"id": current.policy_id, "version": current.version},
                        "capture_gaps": ["metadata_only_no_original_body_or_image"], "development_fixture": surface.get("evidence_level") == "synthetic"}
             latest = self.policy()
@@ -75,11 +86,21 @@ class Collector:
             # The old body was never read. Re-observe only the same, still focused
             # permitted surface; the resulting event bears the current timestamp.
             self.tick(force_finalize=True, _reclassify=False, expected_surface=surface)
+        self.outbox.quarantine_pending(now.timestamp())
         return count
+
+    def _screenshot_due(self, surface, now, text):
+        """At most one image per unchanged window per minute. A new text gets a new image."""
+        last = self._last_screenshot.get(_identity(surface))
+        if last is None:
+            return True
+        last_time, last_text = last
+        if text != last_text:
+            return True
+        return (now - last_time).total_seconds() >= 60
 
     def tick(self, force_finalize=False, *, _reclassify=True, expected_surface=None):
         now = self.clock()
-        self.outbox.quarantine_pending(now.timestamp())
         policy = self.policy()
         if not policy.valid(now):
             return {"status": "policy_unavailable", "code": policy.control_reason}
@@ -124,20 +145,21 @@ class Collector:
             if policy.classify(details, now).state != "company":
                 return {"status": "focus_changed"}
             source = {"kind": "desktop_window", **{key: surface.get(key, "") for key in ("app_id", "title", "record_ref", "window_id", "process_id")}}
-            evidence = {"text": str(details.get("text", ""))[:16000]}
+            evidence = {"text": redact_secrets(str(details.get("text", ""))[:16000])}
             signals = list(decision.signals)
             current = self.policy()
             if (current.policy_id != policy.policy_id or current.version != policy.version or not current.valid(self.clock())
                     or current.classify(surface, self.clock()).state != "company"):
                 return {"status": "policy_changed"}
-            if current.permits_image(self.clock()):
+            if current.permits_image(self.clock()) and self._screenshot_due(surface, self.clock(), evidence["text"]):
                 try:
                     image = self.native.screenshot(surface)
-                    if not 0 < len(image) <= 2 * 1024 * 1024:
+                    if not _acceptable_image(image):
                         raise NativeFailure("image_size_invalid")
                     # Defense beyond the helper's own pre/post focus checks.
                     if _identity(self.native.context()) != _identity(surface):
                         return {"status": "focus_changed"}
+                    self._last_screenshot[_identity(surface)] = (self.clock(), evidence["text"])
                 except NativeFailure as error:
                     if str(error) == "focus_changed":
                         return {"status": "focus_changed"}
@@ -274,7 +296,8 @@ def flush(outbox: Outbox, transport: Transport, policy: Callable[[], Policy],
                 if not attachment.get("id") or attachment.get("sha256") != item["image_hash"]:
                     raise PermanentDeliveryError("invalid_attachment_receipt")
                 outbox.update_claim(item, attachment_receipt=json.dumps(attachment))
-                payload = dict(payload, attachments=[{"id": attachment["id"], "sha256": item["image_hash"]}])
+                media = attachment.get("media_type") or ("image/jpeg" if item["image"].startswith(b"\xff\xd8\xff") else "image/png")
+                payload = dict(payload, attachments=[{"id": attachment["id"], "sha256": item["image_hash"], "media_type": media}])
             # Policy can be revoked during an upload; never send a now-forbidden image link.
             latest = policy()
             if not latest.valid(clock()):

@@ -37,7 +37,7 @@ class NativeAdapter:
         if not isinstance(payload, dict):
             raise NativeFailure("native_helper_invalid_response")
         if result.returncode != 0 or payload.get("error"):
-            allowed = {"permission_denied", "no_focused_window", "focus_changed", "protected_surface", "ambiguous_window", "screen_permission_denied", "screenshot_unavailable", "screenshot_unusable", "window_too_large"}
+            allowed = {"permission_denied", "no_focused_window", "focus_changed", "protected_surface", "ambiguous_window", "screen_permission_denied", "screenshot_unavailable", "screenshot_unusable", "window_too_large", "secure_field_visible"}
             code = payload.get("error")
             raise NativeFailure(code if code in allowed else "native_helper_failed")
         return payload
@@ -57,6 +57,6 @@ class NativeAdapter:
             data = base64.b64decode(result["image_base64"], validate=True)
         except (ValueError, KeyError):
             raise NativeFailure("native_image_invalid") from None
-        if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        if not (data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8\xff")):
             raise NativeFailure("native_image_invalid")
         return data

@@ -109,14 +109,15 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(self.collector.tick()["status"], "policy_unavailable")
         self.assertEqual(self.native.context_calls, 0)
 
-    def test_app_only_is_uncertain_and_private_content_never_persisted(self):
-        self.native.surface.update(title="Personal meeting SENSITIVE-TITLE", text="PRIVATE BODY", record_ref="https://private.invalid/SECRET")
-        self.assertEqual(self.collector.tick()["classification"], "uncertain")
-        body = json.dumps(self.payload())
-        for secret in ("SENSITIVE-TITLE", "PRIVATE BODY", "private.invalid", "SECRET"):
-            self.assertNotIn(secret, body)
-        self.assertEqual((self.native.text_calls, self.native.image_calls), (0, 0))
-        self.assertEqual(self.payload()["source"]["app_id"], "test.browser")
+    def test_app_without_confirmed_name_is_shared(self):
+        self.native.surface.update(title="Cronograma da semana", text="Medição 80 por cento", record_ref="")
+        self.current = replace(self.current, work_markers=(), record_refs=())
+        self.assertEqual(self.collector.tick()["classification"], "company")
+        body = self.payload()
+        self.assertEqual(body["classification"]["reason"], "work_computer_default")
+        self.assertIn("Medição 80 por cento", body["evidence"]["text"])
+        self.assertGreater(self.native.text_calls, 0)
+        self.assertEqual(self.box.quarantine_pending(NOW.timestamp()), [])
 
     def test_personal_secure_and_worker_are_excluded_even_with_company_marker(self):
         for change in ({"title": "SYNTHETIC-COMPANY PRIVATE-SENTINEL"}, {"secure_context": True}, {"origin": "company-pilot-semantic-worker"}):
@@ -129,9 +130,13 @@ class CollectorTests(unittest.TestCase):
 
     def test_record_reference_does_not_match_lookalike_prefix(self):
         self.native.surface.update(title="unknown", record_ref="https://example.invalid/company-secrets")
-        self.assertEqual(self.current.classify(self.native.surface, NOW).state, "uncertain")
+        lookalike = self.current.classify(self.native.surface, NOW)
+        self.assertEqual(lookalike.state, "company")
+        self.assertFalse(any(signal.startswith("record_ref:") for signal in lookalike.signals))
         self.native.surface["record_ref"] = "https://example.invalid/company/TEST-42"
-        self.assertEqual(self.current.classify(self.native.surface, NOW).state, "company")
+        matched = self.current.classify(self.native.surface, NOW)
+        self.assertEqual(matched.state, "company")
+        self.assertTrue(any(signal.startswith("record_ref:") for signal in matched.signals))
 
     def test_native_timeout_retains_text_and_explicit_gap(self):
         self.native.image_error = "native_helper_timeout"

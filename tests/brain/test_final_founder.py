@@ -112,7 +112,8 @@ class FinalFounderTests(unittest.TestCase):
                                              "privacy_disposition": "withheld"})
         files = self.brain.store.read().files
         self.assertNotIn(gap["source_id"], "\n".join(text for path, text in files.items() if path.startswith("notes/")))
-        self.assertIn("Captura não mapeada", files["views/cobertura.md"])
+        self.assertIn("não entram no mapa", files["views/cobertura.md"])
+        self.assertNotIn("descreva em uma frase", files["views/cobertura.md"])
         self.assertIn(source["id"], card)
 
     def test_local_cycle_with_no_captures_invents_nothing(self):

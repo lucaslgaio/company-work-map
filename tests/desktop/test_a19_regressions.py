@@ -153,6 +153,7 @@ class QuarantineRegressions(unittest.TestCase):
             box = Outbox(path)
             current = [replace(policy(False), expires_at=NOW + timedelta(days=10), work_markers=())]
             native = NativeStub("TEST-900 unknown document")
+            native.surface["privacy_disposition"] = "withheld"
             clock = [NOW]
             collector = Collector(DEVICE, native, box, lambda: current[0], lambda: clock[0])
             try:
@@ -163,15 +164,16 @@ class QuarantineRegressions(unittest.TestCase):
                 self.assertEqual(box.quarantine_pending(clock[0].timestamp())[0]["id"], first["id"])
                 box.close()
                 box = Outbox(path); collector.outbox = box
-                current[0] = replace(current[0], version=2, work_markers=("TEST-900",))
+                stored = json.loads(box.db.execute("SELECT surface FROM quarantine WHERE state='pending'").fetchone()[0])
+                stored.pop("privacy_disposition", None)
+                box.db.execute("UPDATE quarantine SET surface=? WHERE state='pending'", (canonical(stored),))
+                native.surface.pop("privacy_disposition", None)
                 self.assertEqual(collector.reclassify_quarantine(), 1)
-                current[0] = replace(current[0], version=3, work_markers=())
+                promoted = [json.loads(row[0]) for row in box.db.execute("SELECT payload FROM events") if b"metadata_only_no_original_body_or_image" in row[0]][0]
                 clock[0] += timedelta(seconds=15)
                 collector.tick()
-                later = box.quarantine_pending(clock[0].timestamp())[0]
-                self.assertNotEqual(first["id"], later["id"])
-                current[0] = replace(current[0], version=4, work_markers=("TEST-900",))
-                self.assertEqual(collector.reclassify_quarantine(), 1)
+                fresh = [json.loads(row[0]) for row in box.db.execute("SELECT payload FROM events")]
+                self.assertTrue(any(item["event_id"] != promoted["event_id"] and item["classification"]["state"] == "company" for item in fresh))
                 self.assertEqual(collector.reclassify_quarantine(), 0)
             finally: box.close()
 

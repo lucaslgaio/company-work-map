@@ -6,13 +6,13 @@ Não conecte conta, não envie mensagem e não ligue a captura. A captura só co
 
 ## Versão
 
-No Git, `founder/pilot-release.json` traz `code_commit` igual a `HEAD`. Isso quer dizer: a versão é o commit desta pasta. O pacote Python desta pasta é `0.1.2`.
+No Git, `founder/pilot-release.json` traz `code_commit` igual a `HEAD`. Isso quer dizer: a versão é o commit desta pasta. O pacote Python desta pasta é `0.1.3`.
 
 ```text
 git rev-parse HEAD
 ```
 
-Se o piloto já está em uso, atualize o código nesta pasta e reinstale no mesmo Python, sem apagar a configuração nem o cérebro local. Na raiz do repositório: `git pull` e, em seguida, `python3 -m pip install -e .`. Quem roda sem instalar, só com `python3 -m company_pilot`, precisa apenas do `git pull`. A partir da `0.1.1`, uma citação da análise pode diferir um pouco da fonte (acento em NFC ou NFD, aspas, travessão, espaços, maiúsculas ou um erro curto de digitação) e o programa grava o trecho original; citação inventada continua recusada. Se `interview next` ou `status` pedir o caminho manual, use `operator prompt` e `operator apply`, ou `operator commit-literal`.
+Se o piloto já está em uso, atualize o código na pasta que o serviço usa, sem apagar a configuração nem o cérebro. O checkout do fundador está detached: não use `git pull`. Não rode `python3 -m pip install -e .` e não use `--break-system-packages`. O Python do sistema recusa instalação (PEP 668). Os comandos são `python3 -m company_pilot`, sem instalar. Na pasta do checkout: `git fetch origin` e `git checkout COMMIT_PUBLICADO`. A partir da `0.1.1`, uma citação da análise pode diferir um pouco da fonte (acento em NFC ou NFD, aspas, travessão, espaços, maiúsculas ou um erro curto de digitação) e o programa grava o trecho original; citação inventada continua recusada. Se `interview next` ou `status` pedir o caminho manual, use `operator prompt` e `operator apply`, ou `operator commit-literal`.
 
 Na `0.1.2`, dois fatos da entrevista sobre o mesmo assunto deixam de ser marcados como conflito só porque o texto é diferente. Para uma instalação que já tem esses conflitos, use a configuração que o fundador já tem no lugar de `CONFIG`:
 
@@ -21,7 +21,7 @@ python3 -m company_pilot --config CONFIG repair context-conflicts --dry-run
 python3 -m company_pilot --config CONFIG repair context-conflicts
 ```
 
-O primeiro comando só mostra. O segundo grava o reparo. Não apaga o histórico. Se `setup status` ou `interview next` disser que nenhum nome de reconhecimento foi confirmado, as capturas continuam incertas até o fundador confirmar os nomes que já apareceram na entrevista, um par por vez:
+O primeiro comando só mostra. O segundo grava o reparo. Não apaga o histórico. Um nome confirmado ajuda a ligar a janela ao projeto. A partir da `0.1.3` ele não segura mais a captura: no computador de trabalho, o que não for claramente pessoal entra no mapa. Confirme só os nomes que o fundador aceitar, um par por vez:
 
 ```text
 python3 -m company_pilot --config CONFIG setup confirm-names --name "NOME" --kind record_name
@@ -29,15 +29,15 @@ python3 -m company_pilot --config CONFIG setup confirm-names --name "NOME" --kin
 
 O tipo pode ser `record_name`, `record_ref`, `company_alias` ou `business_account`. Não confirme um nome que ele não aceitou. Não conecte conta, não envie mensagem e não ligue captura neste passo.
 
-## 1. Instalar
+## 1. Rodar, sem instalar
 
-Na raiz do repositório, com Python 3.12 ou mais novo:
+Na raiz do repositório, com Python 3.12 ou mais novo, use o módulo direto. Não instale no Python do sistema.
 
 ```text
-python3 -m pip install -e .
+python3 -m company_pilot
 ```
 
-Se o `pip` deste `python3` não puder instalar, use o mesmo interpretador que o fundador já tem e rode os comandos seguintes com `python3 -m company_pilot`, sem instalar. Não crie conta e não baixe serviço.
+Não rode `python3 -m pip install -e .` e não use `--break-system-packages`. Não crie conta e não baixe serviço.
 
 ## 2. Criar a configuração local
 
@@ -110,6 +110,27 @@ Cada item do arquivo precisa de when, app, record_ref e text, com o texto real d
 
 Não invente captura, tarefa ou pessoa para preencher o mapa.
 
+## Atualizar uma instalação que já captura
+
+Na `0.1.3` a captura do computador de trabalho entra como trabalho. O que é claramente pessoal fica só no Mac: as exclusões já gravadas pela pessoa, mais banco e corretora pessoais, saúde pessoal, namoro, streaming, redes sociais pessoais, gerenciador de senha, janela anônima e tela bloqueada. WhatsApp, LinkedIn e YouTube não estão nessa lista. Senha continua redigida. A lista completa está no `CHANGELOG.md`, na entrada `0.1.3`.
+
+A imagem da janela de trabalho também entra, ligada à fonte em `attachments/`. Sem a permissão de Gravação de Tela, o texto continua.
+
+Na pasta do checkout que o serviço usa, com `CONFIG` da empresa e `DEVICE_CONFIG` do coletor:
+
+```text
+git fetch origin
+git checkout COMMIT_PUBLICADO
+python3 -m company_pilot --config CONFIG setup screenshots --founder yes --team yes
+python3 -m company_pilot --config CONFIG setup consent --participate yes --screenshots yes --reviewed-defaults
+python3 -m company_pilot.desktop enable-capture --config DEVICE_CONFIG
+launchctl kickstart -k "gui/$(id -u)/com.company-pilot.desktop"
+python3 -m company_pilot.desktop screenshots --config DEVICE_CONFIG
+python3 -m company_pilot.desktop status --config DEVICE_CONFIG
+```
+
+Não use `git pull`, não instale com pip e não use `--break-system-packages`. Se `screenshots` disser que a Gravação de Tela não está autorizada, abra Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela, adicione o coletor e rode de novo o `launchctl kickstart`. Confira `actually_taking` e, no repositório da empresa, as primeiras capturas em `views/fontes.md` e as atividades em `views/mapa.md`. A quarentena que ainda estiver no Mac é relida nesse ciclo.
+
 ## Grupo da Nora
 
 O nome do grupo e quem pode responder entram na rota, na hora da configuração, e não ficam neste repositório. Não há nome de pessoa nem número aqui. O fundador preenche os dele. O operador, que envia pela rota, não responde quando há pessoas configuradas para responder. Se duas respostas divergirem, a Nora manda uma frase só: cita as duas respostas e faz uma pergunta. O modelo da mensagem, em português e com o nome de quem recebe, está em `company_pilot/nora/presentation.py`. O exemplo de rota, com espaços em branco para preencher, está em `deploy/nora-vps/README.md`. Nada disso é enviado aqui.
@@ -118,4 +139,4 @@ O nome do grupo e quem pode responder entram na rota, na hora da configuração,
 
 Preparar o repositório privado da empresa e o link único. Isso não faz parte dos comandos acima. Está em `docs/operator-setup.md`. Nesse repositório privado, não rode `init`: o operador já preparou o cérebro.
 
-Pare se algo pedir senha, conta real, envio de mensagem ou captura de tela.
+Neste exercício inicial, pare se algo pedir senha, conta real ou envio de mensagem. Não ligue a captura aqui. Uma instalação que já captura segue a seção de atualização acima, inclusive a imagem da janela de trabalho.

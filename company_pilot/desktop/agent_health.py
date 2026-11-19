@@ -96,8 +96,15 @@ def _alive(pid):
         return False
 
 
-def native_ready(probe, images):
-    ready = probe.get("accessibility_granted") is True or (probe.get("uia_available") is True and probe.get("interactive_session") is True)
-    if probe.get("platform") == "macOS" and images:
-        ready = ready and probe.get("screen_recording_granted") is True
-    return ready
+def native_ready(probe, images=False):
+    """Text capture. Screen Recording is not required; missing it only stops images."""
+    del images
+    return probe.get("accessibility_granted") is True or (probe.get("uia_available") is True and probe.get("interactive_session") is True)
+
+
+def screen_recording_ready(probe):
+    if probe.get("platform") == "macOS":
+        return probe.get("screen_recording_granted") is True
+    if probe.get("platform") == "Windows":
+        return probe.get("uia_available") is True and probe.get("interactive_session") is True
+    return False

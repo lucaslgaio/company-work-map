@@ -94,8 +94,21 @@ public static class PilotWindow {
                         if ($bitmap.GetPixel([int](($width-1)*$x), [int](($height-1)*$y)).ToArgb() -ne $first) { $uniform=$false }
                     } }
                     if ($uniform) { throw 'screenshot_unusable' }
-                    $bitmap.Save($memory, [System.Drawing.Imaging.ImageFormat]::Png)
-                    $result = @{ image_base64=[Convert]::ToBase64String($memory.ToArray()); media_type='image/png'; single_window=$true }
+                    $maxEdge = 1280
+                    $saved = $bitmap
+                    $scaledGraphics = $null
+                    if ($width -gt $maxEdge -or $height -gt $maxEdge) {
+                        $scale = $maxEdge / [Math]::Max($width, $height)
+                        $targetW = [int][Math]::Max(1, $width * $scale)
+                        $targetH = [int][Math]::Max(1, $height * $scale)
+                        $saved = New-Object System.Drawing.Bitmap $targetW, $targetH
+                        $scaledGraphics = [System.Drawing.Graphics]::FromImage($saved)
+                        $scaledGraphics.DrawImage($bitmap, 0, 0, $targetW, $targetH)
+                    }
+                    $saved.Save($memory, [System.Drawing.Imaging.ImageFormat]::Png)
+                    if ($scaledGraphics) { $scaledGraphics.Dispose() }
+                    if ($saved -ne $bitmap) { $saved.Dispose() }
+                    $result = @{ image_base64=[Convert]::ToBase64String($memory.ToArray()); media_type='image/png'; single_window=$true; max_edge=$maxEdge }
                 } finally { $memory.Dispose(); $graphics.Dispose(); $bitmap.Dispose() }
             }
         }

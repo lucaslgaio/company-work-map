@@ -31,7 +31,7 @@ O reparo não mexe num conflito que a análise marcou como `conflict`. Pode roda
 
 ## Nomes para reconhecer janelas
 
-Um projeto, um registro ou o nome da empresa citado na entrevista não passa sozinho a liberar captura. Enquanto não houver nome confirmado, `setup status`, `interview next` e `operator health` avisam, e a janela sem esse nome continua incerta. Confirme só o que o fundador aceitar, com o nome exatamente como está na fonte:
+Um projeto, um registro ou o nome da empresa citado na entrevista ajuda a ligar a janela ao projeto. Não é mais a trava da captura: no computador de trabalho, a janela entra como trabalho, salvo o que for claramente pessoal. `setup status`, `interview next` e `operator health` avisam quando nenhum nome foi confirmado. Confirme só o que o fundador aceitar, com o nome exatamente como está na fonte:
 
 ```text
 python3 -m company_pilot --config CONFIG setup confirm-names --name "NOME" --kind record_name

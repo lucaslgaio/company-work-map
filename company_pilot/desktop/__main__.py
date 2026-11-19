@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import time
 import uuid
-from .agent_health import native_ready, read_health, write_health
+from .agent_health import native_ready, read_health, screen_recording_ready, write_health
 from .collector import Collector, NativeFailure, PermanentDeliveryError, flush
 from .config import policy_file, read_config, replace_config, write_config
 from .native import NativeAdapter
@@ -23,6 +23,37 @@ class FixtureNative:
     def context(self): return self.surface.copy()
     def text(self, expected): return self.surface.copy()
     def screenshot(self, expected): raise NativeFailure("fixture_has_no_native_image")
+
+
+SCREEN_RECORDING_STEPS = (
+    "A gravação de tela não está autorizada. Abra Ajustes do Sistema > Privacidade e Segurança > "
+    "Gravação de Tela, adicione o coletor (o Python que executa company_pilot.desktop) e reinicie o serviço: "
+    "launchctl kickstart -k gui/$(id -u)/com.company-pilot.desktop. A captura de texto continua sem essa permissão."
+)
+
+
+def screenshot_report(config, policy, box, probe):
+    """Whether images are actually stored, not only whether the policy allows them."""
+    allowed = bool(policy is not None and policy.permits_image(utcnow()))
+    granted = screen_recording_ready(probe) if probe else False
+    if probe and probe.get("platform") == "macOS" and "screen_recording_granted" not in probe and probe.get("status"):
+        granted = False
+    stored = box.db.execute("SELECT count(*) FROM events WHERE image IS NOT NULL").fetchone()[0]
+    buffered = box.db.execute("SELECT count(*) FROM episodes WHERE image IS NOT NULL").fetchone()[0]
+    taking = bool(allowed and granted and (stored or buffered))
+    if not allowed:
+        step = "A política ainda não permite imagens. No config da empresa: setup screenshots --founder yes --team yes. No mesmo computador: setup consent --participate yes --screenshots yes --reviewed-defaults. Depois ative de novo a captura."
+    elif probe.get("platform") == "macOS" and probe.get("screen_recording_granted") is not True:
+        step = SCREEN_RECORDING_STEPS
+    elif taking:
+        step = "As imagens estão sendo gravadas nesta fila e seguem com a captura para o repositório, em attachments/, ligadas à fonte."
+    elif allowed and granted and config.get("capture_enabled") is True:
+        step = "A permissão e a política permitem imagens. Esta fila ainda não tem uma imagem; a próxima janela de trabalho deve gerar uma."
+    else:
+        step = "A política permite imagens, mas o coletor ainda não gravou nenhuma nesta fila. Confira se a captura está ligada e se o serviço foi reiniciado."
+    return {"policy_allowed": allowed, "screen_recording_granted": bool(probe.get("screen_recording_granted")) if probe.get("platform") == "macOS" else granted,
+            "images_stored": stored, "images_buffered": buffered, "actually_taking": taking,
+            "text_capture_continues": True, "next_step": step}
 
 
 def diagnose(config, native, transport, get_policy, health_path):
@@ -51,7 +82,8 @@ def diagnose(config, native, transport, get_policy, health_path):
     except (ValueError, OSError, AttributeError, PermanentDeliveryError) as error:
         checks["transport"] = {"status": "online_transport_unavailable", **failure_details(error, config)}
     checks["agent_health"] = read_health(health_path, config)
-    checks["native_ready"] = checks["platform"]["supported"] and checks["runtime"] and all(t["available"] for t in checks["tools"].values()) and checks["agent_health"].get("context_verified") is True and native_ready(checks["agent_health"].get("native_probe", {}), checks.get("screenshots_permitted", False))
+    checks["native_ready"] = checks["platform"]["supported"] and checks["runtime"] and all(t["available"] for t in checks["tools"].values()) and checks["agent_health"].get("context_verified") is True and native_ready(checks["agent_health"].get("native_probe", {}))
+    checks["screenshots_ready"] = checks.get("screenshots_permitted") is True and screen_recording_ready(checks.get("interactive_probe") or {})
     checks["agent_health"]["ready"] = checks["native_ready"]
     if not checks["native_ready"]:
         checks["agent_health"]["next_step"] = "Confira o registro do agente neste sistema e seu relato recente; permissões de uma sessão interativa não comprovam acesso em segundo plano."
@@ -71,7 +103,7 @@ def main(argv=None):
     configure.add_argument("--synthetic", action="store_true")
     configure.add_argument("--device-id")
     configure.add_argument("--development", action="store_true")
-    for name in ("doctor", "status", "run", "flush", "agent", "prepare-agent", "enable-capture"):
+    for name in ("doctor", "status", "screenshots", "run", "flush", "agent", "prepare-agent", "enable-capture"):
         command = commands.add_parser(name)
         command.add_argument("--config", type=Path, required=True)
         command.add_argument("--development", action="store_true")
@@ -128,12 +160,25 @@ def main(argv=None):
         health_path = args.config.resolve().parent / "agent-health.json"
         box = Outbox(Path(config["outbox_file"]))
         try:
-            if args.command == "status":
-                pending = len(box.quarantine_pending(utcnow().timestamp()))
-                try: controls = control_status(get_policy(), utcnow())
-                except (ValueError, OSError, PermanentDeliveryError, ConnectionError): controls = {"capture_allowed": False, "reason": "policy_unavailable"}
+            if args.command in {"status", "screenshots"}:
+                pending = len(box.quarantine_open())
+                try:
+                    current_policy = get_policy()
+                    controls = control_status(current_policy, utcnow())
+                except (ValueError, OSError, PermanentDeliveryError, ConnectionError):
+                    current_policy, controls = None, {"capture_allowed": False, "reason": "policy_unavailable"}
+                probe = {}
+                try:
+                    probe = NativeAdapter().probe()
+                except (NativeFailure, ValueError, OSError):
+                    probe = {}
+                shots = screenshot_report(config, current_policy, box, probe)
+                if args.command == "screenshots":
+                    print(json.dumps(shots, ensure_ascii=False))
+                    return 0
                 print(json.dumps({"queue": box.status(), "agent": read_health(health_path, config), "capture_enabled": config.get("capture_enabled", False),
-                                  "controls": controls, "coverage": box.coverage_status(), "quarantine_pending": pending}, ensure_ascii=False))
+                                  "controls": controls, "coverage": box.coverage_status(), "quarantine_pending": pending,
+                                  "screenshots": shots}, ensure_ascii=False))
                 return 0
             if args.command == "prepare-agent":
                 if not get_policy().valid(utcnow()): raise ValueError("policy_unavailable")
@@ -169,7 +214,7 @@ def main(argv=None):
                     try: probe = native.probe()
                     except NativeFailure as error: probe = {"status": str(error)}
                     health = write_health(health_path, current, probe)
-                    if not current.get("capture_enabled") or not health["context_verified"] or not native_ready(probe, get_policy().permits_image(utcnow())):
+                    if not current.get("capture_enabled") or not health["context_verified"] or not native_ready(probe):
                         if args.once: return 2
                         time.sleep(config.get("poll_seconds", 15))
                         continue
