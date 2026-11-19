@@ -96,7 +96,7 @@ class OutcomeControls(unittest.TestCase):
 
     def test_two_unknown_windows_keep_count_without_titles(self):
         for index in range(2):
-            self.native.surface.update(title="UNKNOWN PRIVATE " + str(index), window_id=str(index))
+            self.native.surface.update(title="UNKNOWN PRIVATE " + str(index), window_id=str(index), privacy_disposition="withheld")
             self.collector.tick()
         rows = [json.loads(r[0]) for r in self.box.db.execute("SELECT payload FROM events ORDER BY created_at")]
         self.assertEqual(rows[-1]["coverage"]["distinct_windows"], 2)
@@ -105,10 +105,10 @@ class OutcomeControls(unittest.TestCase):
         self.assertEqual(len({r["context_key"] for r in rows}), 2)
 
     def test_reclassification_reobserves_current_content_at_current_time(self):
-        self.native.surface.update(title="Cronograma Obra AVM 82", text="OLD UNREAD")
-        self.collector.tick()
+        surface = dict(self.native.surface, title="Cronograma Obra AVM 82")
+        self.box.quarantine_metadata(DEVICE, surface, self.now.isoformat(), self.now.timestamp())
         self.now += timedelta(minutes=10)
-        self.native.surface["text"] = "CURRENT PERMITTED CONTENT"
+        self.native.surface.update(title="Cronograma Obra AVM 82", text="CURRENT PERMITTED CONTENT")
         self.current = replace(self.current, version=2, work_markers=("Cronograma Obra",))
         self.collector.reclassify_quarantine()
         rows = [json.loads(r[0]) for r in self.box.db.execute("SELECT payload FROM events")]
@@ -119,7 +119,7 @@ class OutcomeControls(unittest.TestCase):
 
     def test_clock_hour_change_alone_retains_unknown_context_and_period_identity(self):
         self.current = replace(self.current, expires_at=NOW + timedelta(days=1))
-        self.native.surface["title"] = "UNKNOWN"
+        self.native.surface.update(title="UNKNOWN", privacy_disposition="withheld")
         self.collector.tick()
         first = json.loads(self.box.db.execute("SELECT payload FROM events").fetchone()[0])
         self.now += timedelta(hours=2)
@@ -130,8 +130,8 @@ class OutcomeControls(unittest.TestCase):
         self.assertEqual(latest["coverage"]["observed_samples"], 2)
 
     def test_reclassification_of_unavailable_window_does_not_read_another_body(self):
-        self.native.surface.update(title="Cronograma Obra AVM 82")
-        self.collector.tick()
+        surface = dict(self.native.surface, title="Cronograma Obra AVM 82")
+        self.box.quarantine_metadata(DEVICE, surface, self.now.isoformat(), self.now.timestamp())
         self.native.surface.update(title="Personal screen", window_id="different", text="NEVER READ")
         self.current = replace(self.current, version=2, work_markers=("Cronograma Obra",))
         self.collector.reclassify_quarantine()
@@ -139,7 +139,7 @@ class OutcomeControls(unittest.TestCase):
         self.assertNotIn("NEVER READ", json.dumps([json.loads(r[0]) for r in self.box.db.execute("SELECT payload FROM events")]))
 
     def test_expiry_visible_and_personal_is_not_coverage_loss(self):
-        self.native.surface["title"] = "UNKNOWN"
+        self.native.surface.update(title="UNKNOWN", privacy_disposition="withheld")
         self.collector.tick()
         self.box.quarantine_pending((NOW + timedelta(days=2)).timestamp())
         self.assertEqual(self.box.coverage_status()["expired_unresolved"], 1)

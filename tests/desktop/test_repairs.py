@@ -33,24 +33,25 @@ class RepairTests(unittest.TestCase):
         self.box.close()
         self.directory.cleanup()
 
-    def test_unseeded_task_metadata_is_promoted_after_context_without_private_body(self):
-        self.native.surface.update(title="New TEST-900 task", text="PRIVATE UNREAD BODY", record_ref="https://example.invalid/new-task")
-        self.assertEqual(self.collector.tick()["classification"], "uncertain")
-        first = self.box.db.execute("SELECT payload FROM events").fetchone()[0]
-        self.assertNotIn(b"TEST-900", first)
+    def test_old_quarantine_is_promoted_without_a_confirmed_name_and_is_idempotent(self):
+        surface = {"app_id": "test.browser", "window_id": "42", "process_id": 7, "title": "New TEST-900 task",
+                   "record_ref": "https://example.invalid/new-task", "evidence_level": "synthetic"}
+        self.assertTrue(self.box.quarantine_metadata(DEVICE, surface, NOW.isoformat(), NOW.timestamp()))
         self.assertNotIn(b"PRIVATE", self.box.db.execute("SELECT surface FROM quarantine").fetchone()[0])
-        self.assertEqual(self.native.text_calls, 0)
-        self.policy = replace(self.policy, version=2, work_markers=("TEST-900",))
+        self.native.surface.update(title="outra janela", window_id="other")
         self.assertEqual(self.collector.reclassify_quarantine(), 1)
         promoted = [json.loads(row[0]) for row in self.box.db.execute("SELECT payload FROM events") if b"metadata_only_no_original_body_or_image" in row[0]][0]
+        self.assertEqual(promoted["classification"]["state"], "company")
         self.assertIn("New TEST-900 task", promoted["evidence"]["text"])
         self.assertNotIn("PRIVATE", json.dumps(promoted))
         self.assertEqual(promoted["observed_at"], NOW.isoformat())
         self.assertEqual(self.collector.reclassify_quarantine(), 0)
         self.assertEqual(self.native.image_calls, 0)
+        empty = Collector(DEVICE, self.native, self.box, lambda: self.policy, lambda: self.now)
+        self.assertEqual(empty.reclassify_quarantine(), 0)
 
     def test_quarantine_expiry_removes_only_ephemeral_metadata_and_never_promotes(self):
-        self.native.surface["title"] = "unknown task"
+        self.native.surface.update(title="unknown task", privacy_disposition="withheld")
         self.collector.tick()
         self.assertEqual(len(self.box.quarantine_pending(NOW.timestamp())), 1)
         self.assertEqual(self.box.quarantine_pending((NOW + timedelta(days=2)).timestamp()), [])
@@ -72,7 +73,7 @@ class RepairTests(unittest.TestCase):
     def test_alternating_unknown_windows_produces_bounded_cumulative_gaps(self):
         for index in range(240):
             self.now = NOW + timedelta(seconds=15 * index)
-            self.native.surface.update(title="Unknown title " + str(index % 2), app_id="fixture.app" + str(index % 2), window_id=str(index % 2))
+            self.native.surface.update(title="Unknown title " + str(index % 2), app_id="fixture.app" + str(index % 2), window_id=str(index % 2), privacy_disposition="withheld")
             self.collector.tick()
         self.assertEqual(self.box.status(), {"pending": 24})
         self.assertEqual(self.box.coverage_status()["observed_samples"], 240)

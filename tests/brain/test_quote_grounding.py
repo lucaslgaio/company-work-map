@@ -168,7 +168,7 @@ class QuoteGroundingBrainTests(unittest.TestCase):
         out = StringIO()
         self.assertEqual(main(["--config", str(config), "status"], out=out, err=StringIO()), 0)
         reported = json.loads(out.getvalue())
-        self.assertEqual(reported["version"], "0.1.2")
+        self.assertEqual(reported["version"], "0.1.3")
         self.assertEqual(reported["recommended_route"], "manual")
         self.assertEqual(reported["founder_message"], MANUAL_INTERVIEW_MESSAGE)
         self.assertTrue(any("operator apply" in command for command in reported["manual_commands"]))

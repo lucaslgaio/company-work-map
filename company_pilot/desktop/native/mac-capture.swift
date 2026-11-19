@@ -6,6 +6,7 @@ import ScreenCaptureKit
 enum CaptureError: String, Error {
     case permission_denied, no_focused_window, focus_changed, protected_surface
     case screen_permission_denied, ambiguous_window, screenshot_unavailable, window_too_large
+    case secure_field_visible
 }
 
 func attribute(_ element: AXUIElement, _ name: String) -> CFTypeRef? {
@@ -84,6 +85,42 @@ func windowText(_ root: AXUIElement) -> String {
     return String(parts.joined(separator: "\n").prefix(16000))
 }
 
+func containsSecureField(_ root: AXUIElement) -> Bool {
+    var pending = [root]
+    var visited = Set<CFHashCode>()
+    while let element = pending.popLast(), visited.count < 256 {
+        let id = CFHash(element)
+        if visited.contains(id) { continue }
+        visited.insert(id)
+        if stringAttribute(element, "AXSubrole") == "AXSecureTextField" { return true }
+        if let children = attribute(element, "AXChildren") as? [AXUIElement] {
+            pending.append(contentsOf: children.prefix(256 - visited.count))
+        }
+    }
+    return false
+}
+
+func compressedJPEG(_ image: CGImage) -> Data? {
+    let maxSide = 1280.0
+    let width = Double(image.width)
+    let height = Double(image.height)
+    let scale = min(1, maxSide / max(width, height))
+    let targetW = max(1, Int((width * scale).rounded()))
+    let targetH = max(1, Int((height * scale).rounded()))
+    guard let context = CGContext(
+        data: nil, width: targetW, height: targetH, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ) else { return nil }
+    context.interpolationQuality = .medium
+    context.draw(image, in: CGRect(x: 0, y: 0, width: targetW, height: targetH))
+    guard let scaled = context.makeImage() else { return nil }
+    guard let data = NSBitmapImageRep(cgImage: scaled).representation(
+        using: .jpeg, properties: [.compressionFactor: 0.6]
+    ) else { return nil }
+    return data
+}
+
 @main
 struct NativeCapture {
     @MainActor
@@ -116,6 +153,7 @@ struct NativeCapture {
             return current.context.merging(["text": text]) { _, new in new }
         }
         guard action == "screenshot", CGPreflightScreenCaptureAccess() else { throw CaptureError.screen_permission_denied }
+        if containsSecureField(current.window) { throw CaptureError.secure_field_visible }
         // No display capture or process-wide filter. Resolve only the exact active window.
         let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
         guard same(current.context, try focus().context) else { throw CaptureError.focus_changed }
@@ -142,7 +180,7 @@ struct NativeCapture {
         config.showsCursor = false
         let image = try await SCScreenshotManager.captureImage(contentFilter: SCContentFilter(desktopIndependentWindow: window), configuration: config)
         guard same(current.context, try focus().context) else { throw CaptureError.focus_changed }
-        guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { throw CaptureError.screenshot_unavailable }
-        return ["image_base64": png.base64EncodedString(), "media_type": "image/png", "single_window": true]
+        guard let jpeg = compressedJPEG(image) else { throw CaptureError.screenshot_unavailable }
+        return ["image_base64": jpeg.base64EncodedString(), "media_type": "image/jpeg", "single_window": true, "max_edge": 1280]
     }
 }

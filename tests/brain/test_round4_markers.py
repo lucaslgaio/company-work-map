@@ -159,13 +159,18 @@ class Round4MarkerTests(unittest.TestCase):
         policy = replace(Policy.from_brain(self.brain.device_policy()),
                          capture_allowed=True, local_exclusions_bound=True)
         at = datetime.now(timezone.utc)
-        self.assertEqual(policy.classify({"title": "EMPRESA ALFA — controle", "app_id": "Gmail"}, at).state, "company")
+        strong = policy.classify({"title": "EMPRESA ALFA — controle", "app_id": "Gmail"}, at)
+        self.assertEqual(strong.state, "company")
+        self.assertTrue(any(signal.startswith("work_marker:") for signal in strong.signals))
         for surface in ({"title": "Inbox", "app_id": "Gmail", "text": "Empresa Alfa"},
                         {"title": "Página inicial", "app_id": "Chrome"},
                         {"title": "Empresa Alfal", "app_id": "Chrome"},
                         {"title": "Obra", "app_id": "Gmail"}):
             with self.subTest(surface=surface):
-                self.assertEqual(policy.classify(surface, at).state, "uncertain")
+                decision = policy.classify(surface, at)
+                self.assertEqual(decision.state, "company")
+                self.assertEqual(decision.reason, "work_computer_default")
+                self.assertFalse(any(signal.startswith("work_marker:") for signal in decision.signals))
 
 
 if __name__ == "__main__":

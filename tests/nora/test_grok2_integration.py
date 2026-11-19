@@ -298,7 +298,7 @@ class Grok2ActualSetupAndReply(unittest.TestCase):
         project_questions(self.brain, self.nora)
         self.assertEqual(self.nora.tick().outcome, "empty")
         self.assertEqual(self.sent, [])
-        self.assertEqual(health(self.nora)["unaskable_pending_by_reason"], {"safe_identifiable_context_missing": 1})
+        self.assertEqual(health(self.nora)["unaskable_pending_by_reason"], {"coverage_gap_not_asked": 1})
         self.assertEqual(health(self.nora)["coverage_constraint_count"], 1)
         self.assertEqual(next(q for q in self.brain.snapshot()["questions"] if q["id"] == safe["question_id"])["status"], "pending")
         self.save("safe-and-withheld-context", safe=safe, withheld=withheld, health=health(self.nora))

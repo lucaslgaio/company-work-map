@@ -139,6 +139,10 @@ class Outbox:
             self.db.execute("INSERT INTO quarantine(id,surface,observed_at,expires,surface_key) VALUES(?,?,?,?,?)", (str(uuid.uuid4()), canonical(safe), observed_at, now + 24 * 3600, surface_key))
         return True
 
+    def quarantine_open(self):
+        """Pending rows, including those already due to expire. Does not delete."""
+        return [dict(row) | {"surface": json.loads(row["surface"])} for row in self.db.execute("SELECT * FROM quarantine WHERE state='pending' ORDER BY observed_at")]
+
     def quarantine_pending(self, now: float):
         with self.transaction():
             self.expire_quarantine(now)
@@ -196,7 +200,7 @@ class Outbox:
                    for r in self.db.execute("SELECT * FROM coverage ORDER BY period_start DESC")]
         return {"observed_samples": totals.get("observed_samples", 0), "expired_unresolved": totals.get("expired_unresolved", 0),
                 "expiry_updates_pending": self.db.execute("SELECT count(*) FROM coverage_expirations").fetchone()[0],
-                "periods": periods, "meaning": "Contextos sem vínculo empresarial confirmado; contagens não comprovam cobertura total nem inatividade. Metadados locais expiram em 24 horas; exclusões pessoais não entram nestes totais."}
+                "periods": periods, "meaning": "Só o que ficou explicitamente sem conteúdo, ou metadado antigo ainda não relido. Uma janela de trabalho entra no mapa. Contagens não comprovam inatividade. Metadados locais sem conteúdo expiram em 24 horas; o que é pessoal não entra nestes totais."}
 
     def enqueue_expiry_updates(self, policy):
         with self.transaction():
@@ -235,7 +239,7 @@ class Outbox:
             new_size = len(canonical(payload)) + len(image or b"") + len(first.encode())
             if self.storage_size() - old_size + new_size > self.max_content_bytes:
                 raise CapacityError("local_storage_capacity_reached")
-            self.db.execute("INSERT INTO episodes VALUES(?,?,?,?,?,?) ON CONFLICT(source) DO UPDATE SET payload=excluded.payload,image=excluded.image,updated=excluded.updated",
+            self.db.execute("INSERT INTO episodes VALUES(?,?,?,?,?,?) ON CONFLICT(source) DO UPDATE SET payload=excluded.payload,image=coalesce(excluded.image, episodes.image),updated=excluded.updated",
                             (source, canonical(payload), image, first, started, now))
 
     def finalize_episodes(self, now: float, *, force=False, max_seconds=300, idle_seconds=60):

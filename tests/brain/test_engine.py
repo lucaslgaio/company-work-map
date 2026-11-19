@@ -165,6 +165,7 @@ class BrainFlowTests(unittest.TestCase):
     def test_screenshot_policy_separates_founder_and_team_and_revokes(self):
         data = b"\x89PNG\r\n\x1a\nSYNTHETIC-TEST-ONLY"
         sha = hashlib.sha256(data).hexdigest()
+        self.brain.update_policy({"screenshots": {"founder": False, "team": False}}, uid())
         with self.assertRaises(AccessDenied):
             self.brain.upload_attachment(uid(), data, sha)
         self.brain.update_policy({"screenshots": {"founder": True, "team": False}}, uid())
@@ -173,11 +174,11 @@ class BrainFlowTests(unittest.TestCase):
         with self.assertRaises(AccessDenied):
             team.upload_attachment(uid(), data, sha)
         payload = observation()
-        payload["policy_version"] = 2
+        payload["policy_version"] = 3
         uploaded = self.brain.upload_attachment(payload["event_id"], data, sha)
         payload["screenshot"] = {"attachment_id": uploaded["attachment_id"], "sha256": sha, "media_type": "image/png"}
         self.brain.update_policy({"screenshots": {"founder": False, "team": False}}, uid())
-        payload["policy_version"] = 3
+        payload["policy_version"] = 4
         with self.assertRaises(AccessDenied):
             self.brain.send_observation(payload)
 

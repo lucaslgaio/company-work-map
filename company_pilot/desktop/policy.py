@@ -1,8 +1,16 @@
-"""Versioned capture policy, with conservative treatment of unknown context."""
+"""Versioned capture policy. A work computer shares by default.
+
+A capture is company work unless it is clearly personal: the person's own
+exclusion phrases, a built-in denylist, a protected field, or an explicit
+personal/excluded disposition. A confirmed name adds a linking signal. It
+does not decide whether the capture leaves the computer.
+"""
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import unicodedata
 from typing import Any
+
+from .personal import personal_reason
 
 
 def instant(value: str) -> datetime:
@@ -136,19 +144,21 @@ class Policy:
         metadata = title + "\n" + ref
         if any(_contains(metadata, marker) for marker in self.personal_markers):
             return Decision("excluded", (), "personal_context")
+        blocked = personal_reason(surface)
+        if blocked:
+            return Decision("excluded", (), blocked)
         if disposition == "withheld":
             return Decision("uncertain", (), "participant_context_withheld")
         weak = {_normalized(m) for m in self.weak_markers}
         matches = tuple("work_marker:" + m for m in self.work_markers if _normalized(m) not in weak and _contains(metadata, m))
         refs = tuple("record_ref:" + r for r in self.record_refs if ref == r or ref.startswith(r.rstrip("/") + "/") or ref.startswith(r + "#") or ref.startswith(r + "?"))
-        if matches or refs:
-            return Decision("company", refs + matches, "learned_company_context")
         partial = tuple("ambiguous_marker:" + m for m in self.weak_markers if _contains(metadata, m))
-        if partial:
-            return Decision("uncertain", partial, "learned_name_requires_business_context")
         app = str(surface.get("app_id", ""))
         tools = tuple("tool_hint:" + tool for tool in self.tool_hints if _contains(app, tool))
-        return Decision("uncertain", tools, "business_connection_missing")
+        signals = refs + matches + partial + tools
+        if matches or refs:
+            return Decision("company", signals, "learned_company_context")
+        return Decision("company", signals, "work_computer_default")
 
 
 def _contains(value: str, term: str) -> bool:

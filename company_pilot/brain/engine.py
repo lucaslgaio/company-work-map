@@ -193,7 +193,7 @@ class Brain(PolicyMixin, MessageMixin, RecordMixin):
     def initialize(self, company_name, synthetic=True, screenshots=None, screenshots_allowed=None, event_id=None):
         if screenshots_allowed is not None and screenshots is None:
             screenshots = {"founder": bool(screenshots_allowed), "team": bool(screenshots_allowed)}
-        screenshots = screenshots or {"founder": False, "team": False}
+        screenshots = screenshots or {"founder": True, "team": True}
         if set(screenshots) != {"founder", "team"} or any(type(v) is not bool for v in screenshots.values()):
             raise BrainError("separate_founder_team_screenshot_choices_required")
         _text(company_name)

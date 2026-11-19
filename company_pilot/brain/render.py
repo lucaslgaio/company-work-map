@@ -59,13 +59,24 @@ def render(state, store):
     home += "\n[Escolhas de coleta e acesso](views/controles.md). A política pedida e a permissão efetiva são verificações separadas.\n"
     home += "\n[Registros da empresa e revisões de origem](views/registros.md). Um arquivo descreve o que foi registrado; não comprova sozinho quem executou ou aprovou uma atividade.\n"
     files["README.md"] = home
-    coverage = "# Cobertura não compartilhada\n\n" + warning
-    for source in state.sources.values():
-        if source.get("safe_metadata", {}).get("privacy_disposition") == "withheld":
+    withheld = [source for source in state.sources.values() if source.get("safe_metadata", {}).get("privacy_disposition") == "withheld"]
+    coverage = "# Cobertura\n\n" + warning
+    coverage += "O computador de trabalho compartilha a captura como trabalho da empresa. O que é claramente pessoal fica só nesse computador e não aparece aqui.\n\n"
+    if not withheld:
+        coverage += "Não há registro antigo sem conteúdo. O mapa é preenchido pelas capturas compartilhadas.\n"
+    else:
+        coverage += (
+            f"Há {len(withheld)} registro(s) antigo(s) sem conteúdo compartilhado. "
+            "Eles não são atividades, não entram no mapa e não geram pergunta; "
+            "não declara atividade pessoal nem trabalho conhecido.\n\n"
+        )
+        shown = withheld[:8]
+        for source in shown:
             when = shown_time(source.get("received_at"))
             who = shown_person(source.get("actor") or "")
-            coverage += "Parte da observação não foi compartilhada. Isso limita a cobertura; não declara atividade pessoal nem trabalho conhecido e não gera pergunta ao fundador.\n\n"
-            coverage += f"**Captura não mapeada.** Em {clean(when or 'um horário não registrado')}, {clean(who)} teve uma captura que não entrou no mapa. O conteúdo não foi compartilhado. Se era trabalho da empresa, descreva em uma frase o que era.\n\n" + _references([{"source_id": source["id"], "quote": source["text"]}], "")
+            coverage += f"- {clean(when or 'horário não registrado')}, {clean(who)}: conteúdo não compartilhado.\n"
+        if len(withheld) > len(shown):
+            coverage += f"\nE mais {len(withheld) - len(shown)} do mesmo tipo, omitidos desta página para não encobrir o mapa.\n"
     files["views/cobertura.md"] = coverage
     context = "# O que a empresa faz\n\n" + warning
     labels = {"activities": "Atividades", "people": "Pessoas e responsabilidades", "stages": "Etapas relevantes", "tracking": "Andamento, pagamentos e saldos", "documents": "Documentos úteis"}
@@ -102,7 +113,7 @@ def render(state, store):
             if marker.get("origin") == "legacy_literal_claim":
                 markers += "Nome literal preservado de uma fonte anterior; confirmar no readback do setup.\n"
     if not readback_markers:
-        markers += "Nenhum nome específico foi confirmado para reconhecimento. Um resumo do negócio não comprova reconhecimento das janelas. Capturas sem um nome confirmado ficam incertas.\n"
+        markers += "Nenhum nome específico foi confirmado para reconhecimento. Um nome confirmado ajuda a ligar a janela ao projeto. A captura do computador de trabalho entra no mapa mesmo sem esse nome; o que é claramente pessoal continua só no computador.\n"
         gap = recognition_gap({"context": state.context, "recognition_markers": state.recognition_markers,
                                "nodes": list(state.groups["nodes"].values()), "sources": list(state.sources.values()),
                                "company": state.company})
@@ -277,7 +288,12 @@ def render(state, store):
             page += f"\n[Resposta original vinculada](../sources/{assignment['original_answer_id']}.md); [fundamento do vínculo](../sources/{assignment['id']}.md).\n"
         files[f"views/questions/{question['id']}.md"] = page
     sources = "# Fontes e correções\n\n" + warning
+    gaps = [source for source in state.sources.values() if source.get("kind") == "coverage_gap"]
+    if gaps:
+        sources += f"- {len(gaps)} registro(s) antigo(s) sem conteúdo. Não são atividades e não geram pergunta. O detalhe resumido está em [cobertura](cobertura.md).\n"
     for source in state.sources.values():
+        if source.get("kind") == "coverage_gap":
+            continue
         sources += f"- [{clean(KINDS_PT.get(source['kind'], source['kind']))}: {clean(shown_time(source.get('received_at')) or 'horário não registrado')}](sources/{source['id']}.md).\n"
         page = "# Fonte preservada\n\n" + warning
         page += f"Tipo: {clean(KINDS_PT.get(source['kind'], source['kind']))}. Recebida em {clean(shown_time(source.get('received_at')) or 'horário não registrado')}.\n\n"

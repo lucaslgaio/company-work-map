@@ -46,8 +46,8 @@ NODE_MARKER_KINDS = {
 }
 MARKER_KINDS = ("record_name", "record_ref", "company_alias", "business_account")
 RECOGNITION_HEALTH_MESSAGE = (
-    "Nenhum nome de reconhecimento foi confirmado; capturas sem esse nome ficam incertas. "
-    "Consulte setup status ou interview next e confirme só os nomes aceitos pelo fundador com setup confirm-names."
+    "Nenhum nome de reconhecimento foi confirmado. A captura do computador de trabalho entra como trabalho; "
+    "um nome confirmado só melhora o vínculo. Confirme os nomes aceitos pelo fundador com setup confirm-names."
 )
 RECOGNITION_COMMAND = 'python3 -m company_pilot --config CONFIG setup confirm-names --name "NOME" --kind TIPO'
 _SKIP_GROUNDING_KINDS = {"analysis", "answer_assignment"}
@@ -115,9 +115,10 @@ def recognition_gap(snapshot):
         return None
     return {
         "confirmed_count": 0,
-        "capture_effect": "uncertain_until_names_confirmed",
+        "capture_effect": "shared_by_default_names_improve_linking",
         "message": (
-            "Nenhum nome de reconhecimento foi confirmado. Capturas sem um nome confirmado ficam incertas e não entram no mapa. "
+            "Nenhum nome de reconhecimento foi confirmado. A captura do computador de trabalho entra no mapa mesmo assim; "
+            "um nome confirmado só liga melhor a janela ao projeto. O que é claramente pessoal continua só no computador. "
             "O comando não confirma nomes sozinho: passe só os que o fundador aceitar, já citados numa fonte."
         ),
         "command": RECOGNITION_COMMAND,
