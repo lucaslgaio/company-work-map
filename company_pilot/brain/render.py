@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 from .engine import FIELDS, LABELS, TOPICS
-from .knowledge import marker_readback
+from .knowledge import marker_readback, recognition_gap
 from .quotes import MANUAL_INTERVIEW_MESSAGE, awaiting_manual_interview
 from .readout import questions_nora_would_ask, shown_person, shown_time
 
@@ -81,7 +81,12 @@ def render(state, store):
         else:
             context += clean(claim["value"]) + "\n\n" + _references(claim.get("evidence", []), "") + "\n"
     for conflict in state.interview.get("context_conflicts", []):
-        status = "Esclarecido pelo fundador; os dois relatos foram preservados" if conflict.get("status") == "resolved" else "Aguardando esclarecimento"
+        if conflict.get("status") == "resolved" and str(conflict.get("resolution", "")).startswith("repair_"):
+            status = "Os dois relatos foram mantidos; a diferença não era uma contradição"
+        elif conflict.get("status") == "resolved":
+            status = "Esclarecido pelo fundador; os dois relatos foram preservados"
+        else:
+            status = "Aguardando esclarecimento"
         context += f"\n**Relatos conflitantes — {labels[conflict['topic']]}:** {clean(conflict['previous']['value'])} / {clean(conflict['reported_candidate']['value'])}. {status}.\n"
     signals = [value for key, value in state.context.items() if key.startswith("work-signal:")]
     if signals:
@@ -97,7 +102,14 @@ def render(state, store):
             if marker.get("origin") == "legacy_literal_claim":
                 markers += "Nome literal preservado de uma fonte anterior; confirmar no readback do setup.\n"
     if not readback_markers:
-        markers += "Nenhum nome específico foi confirmado para reconhecimento. Um resumo do negócio não comprova reconhecimento das janelas.\n"
+        markers += "Nenhum nome específico foi confirmado para reconhecimento. Um resumo do negócio não comprova reconhecimento das janelas. Capturas sem um nome confirmado ficam incertas.\n"
+        gap = recognition_gap({"context": state.context, "recognition_markers": state.recognition_markers,
+                               "nodes": list(state.groups["nodes"].values()), "sources": list(state.sources.values()),
+                               "company": state.company})
+        if gap:
+            markers += "\n" + clean(gap["message"]) + "\n\nComando, com a configuração já usada: setup confirm-names --name NOME --kind TIPO. Tipos: record_name, record_ref, company_alias, business_account. Só entram os nomes que o fundador passar.\n"
+            for candidate in gap["candidates"]:
+                markers += f"\n- {clean(candidate['name'])}: ainda não confirmado; tipo {clean(candidate['kind'])}.\n"
     files["views/reconhecimento.md"] = markers
     policy = state.company.get("access_policy")
     controls = "# Escolhas de coleta e acesso\n\n" + warning

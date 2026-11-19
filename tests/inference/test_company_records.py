@@ -156,7 +156,7 @@ class RecordWorkerTests(unittest.TestCase):
                          {"record-source-2", "record-source-1", "other-source"})
         self.assertEqual({ref["id"] for ref in brain.apply_kwargs["map_scope"]["tasks"]}, {task["id"] for task in candidates})
         self.assertEqual(set(brain.apply_kwargs["map_scope"]["source_ids"]), {source["id"] for source in payload["base_context"]["sources"]})
-        self.assertEqual(brain.apply_kwargs["metadata"]["prompt_version"], "company-work-evidence-12")
+        self.assertEqual(brain.apply_kwargs["metadata"]["prompt_version"], "company-work-evidence-13")
 
     def test_without_record_match_worker_keeps_bounded_active_candidates(self):
         brain = RecordBrain()

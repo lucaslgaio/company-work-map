@@ -314,13 +314,42 @@ class BrainFlowTests(unittest.TestCase):
         for edge in before:
             self.assertIn(f"records/edges/{edge['id']}/v000001.json", files)
 
-    def test_business_context_conflict_routes_and_founder_answer_resolves(self):
-        for text, value in (("Traduzimos documentos.", "Tradução"), ("Correção: consertamos bicicletas.", "Reparo de bicicletas")):
+    def test_missing_context_mode_accumulates_complementary_facts(self):
+        for text, value in (("Traduzimos documentos.", "Tradução"), ("Também revisamos os textos antes da entrega.", "Revisão dos textos")):
             raw = self.brain.interview_answer(text, uid())
             source = next(s for s in self.brain.snapshot()["sources"] if s["id"] == raw["source_id"])
             result = {"tasks": [], "nodes": [], "context_updates": [{"topic": "activities", "value": value, "basis": "reported", "evidence": [{"source_id": source["id"], "quote": text}]}], "next_question": None}
             self.brain.apply_analysis(raw["job_id"], result)
         snapshot = self.brain.snapshot()
+        claims = [record for record in snapshot["context_claims"] if record["topic"] == "activities" and record["status"] == "active"]
+        self.assertEqual({record["claim"]["value"] for record in claims}, {"Tradução", "Revisão dos textos"})
+        self.assertEqual({ref["source_id"] for record in claims for ref in record["claim"]["evidence"]}, {record["source_id"] for record in claims})
+        self.assertEqual(snapshot["context"]["activities"]["value"], "Tradução\nRevisão dos textos")
+        self.assertFalse(any(conflict.get("status") == "pending" for conflict in snapshot["interview"].get("context_conflicts", [])))
+
+    def test_explicit_replace_still_replaces_the_named_claim(self):
+        first = self.brain.interview_answer("Traduzimos documentos.", uid())
+        source = next(s for s in self.brain.snapshot()["sources"] if s["id"] == first["source_id"])
+        self.brain.apply_analysis(first["job_id"], {"tasks": [], "nodes": [], "context_updates": [{"topic": "activities", "value": "Tradução", "basis": "reported", "evidence": [{"source_id": source["id"], "quote": source["text"]}]}], "next_question": None})
+        claim_id = next(record["id"] for record in self.brain.snapshot()["context_claims"] if record["topic"] == "activities" and record["status"] == "active")
+        second = self.brain.interview_answer("A atividade passou a ser só revisão.", uid())
+        replacement = next(s for s in self.brain.snapshot()["sources"] if s["id"] == second["source_id"])
+        self.brain.apply_analysis(second["job_id"], {"tasks": [], "nodes": [], "context_updates": [{"topic": "activities", "value": "Revisão", "basis": "reported", "evidence": [{"source_id": replacement["id"], "quote": replacement["text"]}], "mode": "replace", "replaces": [claim_id]}], "next_question": None})
+        snapshot = self.brain.snapshot()
+        self.assertEqual(snapshot["context"]["activities"]["value"], "Revisão")
+        self.assertEqual(next(record["status"] for record in snapshot["context_claims"] if record["id"] == claim_id), "replaced")
+
+    def test_business_context_conflict_routes_and_founder_answer_resolves(self):
+        for text, value, mode in (("Traduzimos documentos.", "Tradução", None), ("Correção: consertamos bicicletas.", "Reparo de bicicletas", "conflict")):
+            raw = self.brain.interview_answer(text, uid())
+            source = next(s for s in self.brain.snapshot()["sources"] if s["id"] == raw["source_id"])
+            update = {"topic": "activities", "value": value, "basis": "reported", "evidence": [{"source_id": source["id"], "quote": text}]}
+            if mode:
+                update["mode"] = mode
+            result = {"tasks": [], "nodes": [], "context_updates": [update], "next_question": None}
+            self.brain.apply_analysis(raw["job_id"], result)
+        snapshot = self.brain.snapshot()
+        self.assertEqual(snapshot["interview"]["context_conflicts"][0]["origin"], "explicit_mode")
         question = next(q for q in snapshot["questions"] if q.get("target_kind") == "context_conflict")
         self.assertEqual(question["status"], "pending")
         self.assertEqual(snapshot["context"]["activities"]["value"], "Tradução")

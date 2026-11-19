@@ -242,7 +242,9 @@ class InterviewUpdateTests(unittest.TestCase):
         correction = self.brain.interview_correct("people", "Correção posterior: Bia traduz.", uid())
         self.brain.apply_analysis(correction["job_id"], interpreted(self.source(correction["source_id"]), {"people": "Bia"}))
         later = self.brain.interview_answer("Relato posterior: Cia traduz.", uid())
-        self.brain.apply_analysis(later["job_id"], interpreted(self.source(later["source_id"]), {"people": "Cia"}))
+        conflicting = interpreted(self.source(later["source_id"]), {"people": "Cia"})
+        conflicting["context_updates"][0]["mode"] = "conflict"
+        self.brain.apply_analysis(later["job_id"], conflicting)
         conflict = next(q for q in self.brain.snapshot()["questions"] if q.get("target_kind") == "context_conflict")
         assignment = self.brain.apply_analysis(old["job_id"], {"tasks": [], "nodes": [], "context_updates": [], "next_question": None,
             "answer_assignments": [{"answer_id": old["answer_id"], "question_ids": [gap["question_id"]], "evidence": [{"source_id": old["answer_id"], "quote": "Bia traduz."}]}]})
@@ -278,7 +280,9 @@ class InterviewUpdateTests(unittest.TestCase):
         old = self.brain.record_answer([], "Confirmo Bia.", uid(), candidate_question_ids=[gap["question_id"]])
         selected = copy.deepcopy(self.brain.snapshot()["context"]["people"])
         later = self.brain.interview_answer("Cia traduz.", uid())
-        self.brain.apply_analysis(later["job_id"], interpreted(self.source(later["source_id"]), {"people": "Cia"}))
+        conflicting = interpreted(self.source(later["source_id"]), {"people": "Cia"})
+        conflicting["context_updates"][0]["mode"] = "conflict"
+        self.brain.apply_analysis(later["job_id"], conflicting)
         self.assertEqual(self.brain.snapshot()["context"]["people"], selected)
         conflict = next(q for q in self.brain.snapshot()["questions"] if q.get("target_kind") == "context_conflict")
         assignment = self.brain.apply_analysis(old["job_id"], {"tasks": [], "nodes": [], "context_updates": [], "next_question": None,
@@ -302,6 +306,19 @@ class InterviewUpdateTests(unittest.TestCase):
         self.brain.apply_analysis(reply["job_id"], interpreted(self.source(reply["answer_id"]), {"activities": "Revisão de textos"}))
         self.assertEqual(self.brain.snapshot()["context"]["activities"]["value"], "Revisão de textos")
         self.assertEqual(self.brain.interview_next()["deferred_topics"], [])
+
+    def test_correction_queued_while_empty_is_added_beside_a_later_fill(self):
+        answer = self.brain.interview_answer("Fazemos tradução de textos.", uid())
+        correction = self.brain.interview_correct("activities", "Também revisamos os textos traduzidos.", uid())
+        self.assertIsNone(self.source(correction["source_id"]).get("previous_context"))
+        self.brain.apply_analysis(answer["job_id"], interpreted(self.source(answer["source_id"]), {"activities": "Tradução de textos"}))
+        self.brain.apply_analysis(correction["job_id"], interpreted(self.source(correction["source_id"]), {"activities": "Revisão dos textos"}))
+        final = self.brain.snapshot()
+        claims = [record for record in final["context_claims"] if record["topic"] == "activities" and record["status"] == "active"]
+        self.assertEqual({record["claim"]["value"] for record in claims}, {"Tradução de textos", "Revisão dos textos"})
+        self.assertIn(answer["source_id"], {ref["source_id"] for record in claims for ref in record["claim"]["evidence"]})
+        self.assertIn(correction["source_id"], {ref["source_id"] for record in claims for ref in record["claim"]["evidence"]})
+        self.assertFalse(any(conflict.get("status") == "pending" for conflict in final["interview"].get("context_conflicts", [])))
 
     def test_stale_corrections_and_multiple_alternatives_remain_tracked(self):
         self.complete()

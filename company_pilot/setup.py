@@ -375,9 +375,13 @@ def status(brain, health):
             row.update(rejection_reason=code, reason=REJECTIONS[code])
         elif row.get('error_code'):
             row['reason'] = 'A análise não foi aplicada. O operador precisa conferir o código e a próxima tentativa, preservando a resposta.'
-    return {'state':'setup_status','interview':brain.interview_next(),'jobs':jobs,'access':brain.access_policy(),
+    interview = brain.interview_next()
+    result = {'state':'setup_status','interview':interview,'jobs':jobs,'access':brain.access_policy(),
             'operator':health,'process_liveness':'not_verified','wait_estimate':None,
             'message':'O armazenamento online não mantém a análise funcionando. O operador deve manter operator watch ativo, acordado e online. Pendências e falhas acima permanecem abertas.'}
+    if interview.get('recognition'):
+        result['recognition'] = interview['recognition']
+    return result
 
 
 def device_path(config_path):
